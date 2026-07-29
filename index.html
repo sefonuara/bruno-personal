@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rutinas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0F1013;
+    --bg-elevated: #17181D;
+    --bg-card: #1C1D23;
+    --line: #2A2C33;
+    --text: #EDEDEF;
+    --text-dim: #9497A0;
+    --accent: #FF4429;
+    --accent-soft: rgba(255,68,41,0.14);
+    --accent-line: rgba(255,68,41,0.35);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter', sans-serif;
+    min-height:100vh;
+  }
+  h1,h2,h3,.display{
+    font-family:'Bebas Neue', sans-serif;
+    letter-spacing:0.02em;
+    font-weight:400;
+  }
+  .hidden{display:none !important;}
+  button{
+    font-family:'Inter', sans-serif;
+    cursor:pointer;
+    border:none;
+    border-radius:8px;
+  }
+  input{
+    font-family:'Inter', sans-serif;
+    background:var(--bg);
+    border:1px solid var(--line);
+    color:var(--text);
+    border-radius:8px;
+    padding:10px 12px;
+    font-size:14px;
+    width:100%;
+  }
+  input:focus{outline:none; border-color:var(--accent-line);}
+
+  /* ---------- Login ---------- */
+  #login-view{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+  .login-box{
+    width:100%;
+    max-width:380px;
+    background:var(--bg-elevated);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:36px 32px;
+  }
+  .login-box .brand{
+    font-size:44px;
+    line-height:1;
+    color:var(--accent);
+    margin-bottom:4px;
+  }
+  .login-box .sub{
+    color:var(--text-dim);
+    font-size:13px;
+    margin-bottom:22px;
+  }
+  .tabs{
+    display:flex;
+    gap:4px;
+    background:var(--bg);
+    border:1px solid var(--line);
+    border-radius:9px;
+    padding:3px;
+    margin-bottom:24px;
+  }
+  .tab-btn{
+    flex:1;
+    background:transparent;
+    color:var(--text-dim);
+    font-size:13px;
+    font-weight:600;
+    padding:8px;
+    border-radius:6px;
+  }
+  .tab-btn.active{background:var(--accent-soft); color:var(--accent);}
+  .field{margin-bottom:14px;}
+  .field label{
+    display:block;
+    font-size:12px;
+    color:var(--text-dim);
+    margin-bottom:6px;
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+  }
+  .btn-primary{
+    width:100%;
+    background:var(--accent);
+    color:#fff;
+    padding:12px;
+    font-weight:600;
+    font-size:14px;
+    margin-top:8px;
+    transition:filter 0.15s;
+  }
+  .btn-primary:hover{filter:brightness(1.08);}
+  .btn-primary:disabled{opacity:0.5; cursor:default;}
+  .error-msg{
+    color:var(--accent);
+    font-size:13px;
+    margin-top:12px;
+    display:none;
+  }
+
+  /* ---------- App shell ---------- */
+  #app-view{
+    display:flex;
+    min-height:100vh;
+  }
+  #sidebar{
+    width:260px;
+    flex-shrink:0;
+    background:var(--bg-elevated);
+    border-right:1px solid var(--line);
+    padding:24px 16px;
+    display:flex;
+    flex-direction:column;
+  }
+  #sidebar .brand{
+    font-size:28px;
+    color:var(--accent);
+    margin-bottom:2px;
+    padding:0 8px;
+  }
+  #sidebar .who{
+    color:var(--text-dim);
+    font-size:12px;
+    padding:0 8px;
+    margin-bottom:24px;
+  }
+  #student-list{
+    flex:1;
+    overflow-y:auto;
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+  }
+  .student-item{
+    background:transparent;
+    color:var(--text);
+    text-align:left;
+    padding:10px 12px;
+    border-radius:8px;
+    font-size:14px;
+    font-weight:500;
+  }
+  .student-item:hover{background:var(--bg-card);}
+  .student-item.active{background:var(--accent-soft); color:var(--accent);}
+  #add-student-btn{
+    background:var(--bg-card);
+    color:var(--text);
+    border:1px dashed var(--line);
+    padding:10px;
+    font-size:13px;
+    margin-top:12px;
+  }
+  #add-student-btn:hover{border-color:var(--accent-line); color:var(--accent);}
+  #admin-panel-btn{
+    background:transparent;
+    border:1px solid var(--line);
+    color:var(--text-dim);
+    padding:10px;
+    font-size:13px;
+    margin-top:12px;
+    text-align:left;
+  }
+  #admin-panel-btn.active{background:var(--accent-soft); color:var(--accent); border-color:var(--accent-line);}
+  #admin-panel-btn:hover{color:var(--accent);}
+  #logout-btn{
+    background:transparent;
+    color:var(--text-dim);
+    font-size:13px;
+    padding:10px;
+    margin-top:8px;
+    text-align:left;
+  }
+  #logout-btn:hover{color:var(--text);}
+
+  #main-content{
+    flex:1;
+    padding:40px 48px;
+    overflow-y:auto;
+    max-width:900px;
+  }
+  #main-content h1{font-size:38px;}
+  .subtitle{color:var(--text-dim); font-size:14px; margin-bottom:32px;}
+
+  .empty-state{
+    color:var(--text-dim);
+    font-size:14px;
+    padding:60px 20px;
+    text-align:center;
+    border:1px dashed var(--line);
+    border-radius:12px;
+  }
+
+  /* day cards */
+  .day-card{
+    background:var(--bg-elevated);
+    border:1px solid var(--line);
+    border-radius:14px;
+    margin-bottom:20px;
+    overflow:hidden;
+  }
+  .day-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:16px 20px;
+    border-bottom:1px solid var(--line);
+  }
+  .day-header .tag{
+    display:inline-block;
+    background:var(--accent-soft);
+    color:var(--accent);
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:0.06em;
+    padding:3px 8px;
+    border-radius:5px;
+    margin-bottom:6px;
+    text-transform:uppercase;
+  }
+  .day-header h3{font-size:22px;}
+  .day-actions{display:flex; gap:6px;}
+  .icon-btn{
+    background:transparent;
+    color:var(--text-dim);
+    padding:6px 10px;
+    font-size:12px;
+    border-radius:6px;
+  }
+  .icon-btn:hover{background:var(--bg-card); color:var(--text);}
+  .icon-btn.danger:hover{color:var(--accent);}
+
+  table.exercise-table{
+    width:100%;
+    border-collapse:collapse;
+  }
+  table.exercise-table th{
+    text-align:left;
+    font-size:11px;
+    color:var(--text-dim);
+    text-transform:uppercase;
+    letter-spacing:0.05em;
+    padding:10px 20px;
+    font-weight:600;
+    border-bottom:1px solid var(--line);
+  }
+  table.exercise-table td{
+    padding:12px 20px;
+    font-size:14px;
+    border-bottom:1px solid var(--line);
+  }
+  table.exercise-table tr:last-child td{border-bottom:none;}
+  table.exercise-table td.ex-name{font-weight:600;}
+  table.exercise-table td.ex-notes{padding:6px 12px;}
+  .notes-input{
+    background:transparent;
+    border:1px solid transparent;
+    color:var(--text-dim);
+    font-size:13px;
+    padding:8px 8px;
+    border-radius:6px;
+    width:100%;
+  }
+  .notes-input:hover{background:var(--bg-card);}
+  .notes-input:focus{
+    background:var(--bg-card);
+    border-color:var(--accent-line);
+    color:var(--text);
+  }
+  .row-actions{display:flex; gap:4px; justify-content:flex-end;}
+
+  .add-exercise-row{
+    padding:10px 20px;
+  }
+  .add-exercise-row button{
+    background:transparent;
+    color:var(--text-dim);
+    font-size:13px;
+    padding:6px 0;
+  }
+  .add-exercise-row button:hover{color:var(--accent);}
+
+  #add-day-btn{
+    background:var(--bg-card);
+    border:1px dashed var(--line);
+    color:var(--text-dim);
+    padding:14px;
+    width:100%;
+    font-size:14px;
+  }
+  #add-day-btn:hover{border-color:var(--accent-line); color:var(--accent);}
+
+  /* ---------- Admin panel ---------- */
+  .admin-stats{
+    display:flex;
+    gap:16px;
+    margin-bottom:28px;
+  }
+  .stat-card{
+    background:var(--bg-elevated);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:18px 22px;
+    flex:1;
+  }
+  .stat-num{
+    font-family:'Bebas Neue', sans-serif;
+    font-size:36px;
+    color:var(--accent);
+    line-height:1;
+  }
+  .stat-label{
+    color:var(--text-dim);
+    font-size:12px;
+    margin-top:6px;
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+  }
+  .admin-table-wrap{
+    background:var(--bg-elevated);
+    border:1px solid var(--line);
+    border-radius:14px;
+    overflow-x:auto;
+  }
+  table.admin-table{width:100%; border-collapse:collapse; min-width:640px;}
+  table.admin-table th{
+    text-align:left;
+    font-size:11px;
+    color:var(--text-dim);
+    text-transform:uppercase;
+    letter-spacing:0.05em;
+    padding:12px 16px;
+    font-weight:600;
+    border-bottom:1px solid var(--line);
+  }
+  table.admin-table td{
+    padding:8px 16px;
+    font-size:14px;
+    border-bottom:1px solid var(--line);
+    white-space:nowrap;
+  }
+  table.admin-table tr:last-child td{border-bottom:none;}
+  table.admin-table tr.inactive-row{opacity:0.5;}
+  table.admin-table td.ex-name{font-weight:600; white-space:normal;}
+  .admin-check{width:16px; height:16px; accent-color:var(--accent);}
+  .admin-input{
+    background:transparent;
+    border:1px solid transparent;
+    color:var(--text);
+    font-size:13px;
+    padding:6px 8px;
+    border-radius:6px;
+    width:100%;
+    min-width:120px;
+  }
+  .admin-input:hover{background:var(--bg-card);}
+  .admin-input:focus{background:var(--bg-card); border-color:var(--accent-line);}
+
+  /* ---------- Modal ---------- */
+  .modal-backdrop{
+    position:fixed; inset:0;
+    background:rgba(0,0,0,0.55);
+    display:flex; align-items:center; justify-content:center;
+    z-index:50;
+    padding:20px;
+  }
+  .modal{
+    background:var(--bg-elevated);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:28px;
+    width:100%;
+    max-width:420px;
+  }
+  .modal h3{font-size:24px; margin-bottom:18px;}
+  .modal-actions{
+    display:flex;
+    gap:10px;
+    margin-top:20px;
+  }
+  .btn-secondary{
+    flex:1;
+    background:transparent;
+    border:1px solid var(--line);
+    color:var(--text-dim);
+    padding:10px;
+    font-size:13px;
+  }
+  .btn-secondary:hover{color:var(--text);}
+  .modal .btn-primary{flex:1; margin-top:0;}
+
+  @media (max-width: 720px){
+    #app-view{flex-direction:column;}
+    #sidebar{width:100%; border-right:none; border-bottom:1px solid var(--line);}
+    #main-content{padding:24px;}
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-view">
+  <div class="login-box">
+    <div class="brand display">RUTINAS</div>
+    <div class="tabs">
+      <button type="button" class="tab-btn active" id="tab-login">Iniciar sesión</button>
+      <button type="button" class="tab-btn" id="tab-signup">Crear cuenta</button>
+    </div>
+
+    <form id="login-form">
+      <div class="sub">Entrá con tu email y contraseña.</div>
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="login-email" required autocomplete="username">
+      </div>
+      <div class="field">
+        <label>Contraseña</label>
+        <input type="password" id="login-password" required autocomplete="current-password">
+      </div>
+      <button type="submit" class="btn-primary" id="login-btn">Ingresar</button>
+      <div class="error-msg" id="login-error"></div>
+    </form>
+
+    <form id="signup-form" class="hidden">
+      <div class="sub">Creá tu cuenta de alumno. Tu profe va a ver tu nombre y armarte la rutina.</div>
+      <div class="field">
+        <label>Nombre</label>
+        <input type="text" id="signup-name" required autocomplete="name">
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="signup-email" required autocomplete="username">
+      </div>
+      <div class="field">
+        <label>Contraseña</label>
+        <input type="password" id="signup-password" required minlength="6" autocomplete="new-password">
+      </div>
+      <button type="submit" class="btn-primary" id="signup-btn">Crear cuenta</button>
+      <div class="error-msg" id="signup-error"></div>
+    </form>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-view" class="hidden">
+  <div id="sidebar">
+    <div class="brand display">RUTINAS</div>
+    <div class="who" id="who-am-i"></div>
+    <div id="student-list"></div>
+    <button id="admin-panel-btn" class="hidden">⚙ Administración</button>
+    <button id="logout-btn">Cerrar sesión</button>
+  </div>
+  <div id="main-content"></div>
+</div>
+
+<div id="modal-root"></div>
+
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+// ======= CONFIGURÁ ESTO =======
+const SUPABASE_URL = "https://ecjlbvmqmirsyacxkzdc.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVjamxidm1xbWlyc3lhY3hremRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzNDEwMDcsImV4cCI6MjEwMDkxNzAwN30.PPVgkiibolpFl_AlsWZYKdsgW7_6lT6PEAtK5B-8468";
+// ================================
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let currentProfile = null;
+let students = [];
+let selectedStudentId = null;
+let adminPanelOpen = false;
+
+function escapeAttr(str) {
+  return String(str ?? '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+}
+
+const loginView = document.getElementById('login-view');
+const appView = document.getElementById('app-view');
+const loginForm = document.getElementById('login-form');
+const loginBtn = document.getElementById('login-btn');
+const loginError = document.getElementById('login-error');
+const whoAmI = document.getElementById('who-am-i');
+const studentList = document.getElementById('student-list');
+const adminPanelBtn = document.getElementById('admin-panel-btn');
+const mainContent = document.getElementById('main-content');
+const modalRoot = document.getElementById('modal-root');
+
+// ---------- Auth ----------
+loginForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  loginError.style.display = 'none';
+  loginBtn.disabled = true;
+  loginBtn.textContent = 'Ingresando...';
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  loginBtn.disabled = false;
+  loginBtn.textContent = 'Ingresar';
+  if (error) {
+    loginError.textContent = error.message;
+    loginError.style.display = 'block';
+    return;
+  }
+  await boot();
+});
+
+const tabLogin = document.getElementById('tab-login');
+const tabSignup = document.getElementById('tab-signup');
+const loginFormEl = document.getElementById('login-form');
+const signupFormEl = document.getElementById('signup-form');
+
+tabLogin.addEventListener('click', () => {
+  tabLogin.classList.add('active');
+  tabSignup.classList.remove('active');
+  loginFormEl.classList.remove('hidden');
+  signupFormEl.classList.add('hidden');
+});
+tabSignup.addEventListener('click', () => {
+  tabSignup.classList.add('active');
+  tabLogin.classList.remove('active');
+  signupFormEl.classList.remove('hidden');
+  loginFormEl.classList.add('hidden');
+});
+
+signupFormEl.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const signupError = document.getElementById('signup-error');
+  const signupBtn = document.getElementById('signup-btn');
+  signupError.style.display = 'none';
+  const full_name = document.getElementById('signup-name').value.trim();
+  const email = document.getElementById('signup-email').value.trim();
+  const password = document.getElementById('signup-password').value;
+
+  signupBtn.disabled = true;
+  signupBtn.textContent = 'Creando cuenta...';
+
+  const { data, error } = await supabase.auth.signUp({ email, password });
+  if (error || !data.user) {
+    signupBtn.disabled = false;
+    signupBtn.textContent = 'Crear cuenta';
+    signupError.textContent = error ? error.message : 'No se pudo crear la cuenta.';
+    signupError.style.display = 'block';
+    return;
+  }
+
+  const { error: profileError } = await supabase.from('profiles').insert({
+    id: data.user.id, full_name, is_trainer: false
+  });
+
+  signupBtn.disabled = false;
+  signupBtn.textContent = 'Crear cuenta';
+
+  if (profileError) {
+    signupError.textContent = profileError.message;
+    signupError.style.display = 'block';
+    return;
+  }
+
+  await boot();
+});
+
+document.getElementById('logout-btn').addEventListener('click', async () => {
+  await supabase.auth.signOut();
+  location.reload();
+});
+
+async function boot() {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return; // stays on login
+
+  const { data: profile, error } = await supabase
+    .from('profiles')
+    .select('id, full_name, is_trainer, is_active')
+    .eq('id', session.user.id)
+    .single();
+
+  if (error || !profile) {
+    loginView.classList.remove('hidden');
+    appView.classList.add('hidden');
+    loginError.textContent = 'Tu cuenta no tiene un perfil asignado. Hablá con tu profe.';
+    loginError.style.display = 'block';
+    return;
+  }
+
+  if (!profile.is_trainer && !profile.is_active) {
+    await supabase.auth.signOut();
+    loginView.classList.remove('hidden');
+    appView.classList.add('hidden');
+    loginError.textContent = 'Tu cuenta está dada de baja. Consultá con tu profe.';
+    loginError.style.display = 'block';
+    return;
+  }
+
+  currentProfile = profile;
+  loginView.classList.add('hidden');
+  appView.classList.remove('hidden');
+  whoAmI.textContent = profile.is_trainer ? 'Panel del profe' : profile.full_name;
+
+  if (profile.is_trainer) {
+    adminPanelBtn.classList.remove('hidden');
+    adminPanelBtn.addEventListener('click', showAdminPanel);
+    await loadStudents();
+  } else {
+    studentList.style.display = 'none';
+    selectedStudentId = profile.id;
+    await renderRoutine(profile.id, false);
+  }
+}
+
+// ---------- Trainer: student list ----------
+async function loadStudents() {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('is_trainer', false)
+    .eq('is_active', true)
+    .order('full_name');
+  students = data || [];
+  renderStudentList();
+  if (students.length && !selectedStudentId) {
+    selectStudent(students[0].id);
+  } else if (!students.length) {
+    mainContent.innerHTML = `<div class="empty-state">Todavía no hay alumnos activos.<br>Cuando alguno cree su cuenta desde el link, va a aparecer acá.</div>`;
+  }
+}
+
+function renderStudentList() {
+  studentList.innerHTML = '';
+  students.forEach(s => {
+    const btn = document.createElement('button');
+    btn.className = 'student-item' + (s.id === selectedStudentId && !adminPanelOpen ? ' active' : '');
+    btn.textContent = s.full_name;
+    btn.addEventListener('click', () => selectStudent(s.id));
+    studentList.appendChild(btn);
+  });
+}
+
+function selectStudent(id) {
+  selectedStudentId = id;
+  adminPanelOpen = false;
+  adminPanelBtn.classList.remove('active');
+  renderStudentList();
+  renderRoutine(id, true);
+}
+
+// ---------- Routine rendering ----------
+async function renderRoutine(studentId, editable) {
+  mainContent.innerHTML = `<div class="empty-state">Cargando...</div>`;
+
+  const { data: days } = await supabase
+    .from('routine_days')
+    .select('*, exercises(*)')
+    .eq('student_id', studentId)
+    .order('day_order');
+
+  const student = editable ? students.find(s => s.id === studentId) : currentProfile;
+
+  let html = `<h1>${student ? student.full_name : ''}</h1>`;
+  html += `<div class="subtitle">${editable ? 'Rutina del alumno' : 'Tu rutina'}</div>`;
+
+  if (!days || !days.length) {
+    html += `<div class="empty-state">${editable ? 'Este alumno todavía no tiene rutina cargada.' : 'Tu profe todavía no cargó tu rutina.'}</div>`;
+  } else {
+    days.forEach((day, idx) => {
+      const exercises = (day.exercises || []).sort((a,b) => a.exercise_order - b.exercise_order);
+      html += `<div class="day-card">
+        <div class="day-header">
+          <div>
+            <div class="tag">Día ${idx + 1}</div>
+            <h3>${day.day_label}</h3>
+          </div>
+          ${editable ? `<div class="day-actions">
+            <button class="icon-btn" data-action="rename-day" data-day="${day.id}">Renombrar</button>
+            <button class="icon-btn danger" data-action="delete-day" data-day="${day.id}">Eliminar</button>
+          </div>` : ''}
+        </div>
+        <table class="exercise-table">
+          <thead><tr>
+            <th>Ejercicio</th><th>Series x reps</th><th>Notas</th>${editable ? '<th></th>' : ''}
+          </tr></thead>
+          <tbody>
+            ${exercises.map(ex => `
+              <tr>
+                <td class="ex-name">${ex.name}</td>
+                <td>${ex.reps ?? '—'}</td>
+                <td class="ex-notes"><input type="text" class="notes-input" data-ex="${ex.id}" data-day="${day.id}" value="${escapeAttr(ex.notes)}" placeholder="Peso, comentario..."></td>
+                ${editable ? `<td><div class="row-actions">
+                  <button class="icon-btn" data-action="edit-exercise" data-ex="${ex.id}" data-day="${day.id}">Editar</button>
+                  <button class="icon-btn danger" data-action="delete-exercise" data-ex="${ex.id}">Borrar</button>
+                </div></td>` : ''}
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        ${editable ? `<div class="add-exercise-row">
+          <button data-action="add-exercise" data-day="${day.id}">+ Agregar ejercicio</button>
+        </div>` : ''}
+      </div>`;
+    });
+  }
+
+  if (editable) {
+    html += `<button id="add-day-btn">+ Agregar día de rutina</button>`;
+  }
+
+  mainContent.innerHTML = html;
+
+  mainContent.querySelectorAll('.notes-input').forEach(input => {
+    input.addEventListener('blur', () => saveNotes(input));
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') input.blur();
+    });
+  });
+
+  if (editable) {
+    document.getElementById('add-day-btn').addEventListener('click', () => openDayModal(studentId));
+    mainContent.querySelectorAll('[data-action="rename-day"]').forEach(b =>
+      b.addEventListener('click', () => openDayModal(studentId, b.dataset.day)));
+    mainContent.querySelectorAll('[data-action="delete-day"]').forEach(b =>
+      b.addEventListener('click', () => deleteDay(b.dataset.day, studentId)));
+    mainContent.querySelectorAll('[data-action="add-exercise"]').forEach(b =>
+      b.addEventListener('click', () => openExerciseModal(b.dataset.day, studentId)));
+    mainContent.querySelectorAll('[data-action="edit-exercise"]').forEach(b =>
+      b.addEventListener('click', () => openExerciseModal(b.dataset.day, studentId, b.dataset.ex)));
+    mainContent.querySelectorAll('[data-action="delete-exercise"]').forEach(b =>
+      b.addEventListener('click', () => deleteExercise(b.dataset.ex, studentId)));
+  }
+}
+
+// ---------- Admin panel ----------
+async function showAdminPanel() {
+  adminPanelOpen = true;
+  selectedStudentId = null;
+  adminPanelBtn.classList.add('active');
+  renderStudentList();
+
+  mainContent.innerHTML = `<div class="empty-state">Cargando...</div>`;
+
+  const { data: all, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('is_trainer', false)
+    .order('full_name');
+
+  if (error) {
+    mainContent.innerHTML = `<div class="empty-state">No se pudo cargar: ${error.message}</div>`;
+    return;
+  }
+
+  const activeCount = all.filter(s => s.is_active).length;
+  const paidCount = all.filter(s => s.is_active && s.has_paid).length;
+
+  let html = `<h1>Administración</h1>`;
+  html += `<div class="subtitle">${all.length} alumnos en total</div>`;
+  html += `<div class="admin-stats">
+    <div class="stat-card"><div class="stat-num">${activeCount}</div><div class="stat-label">Activos</div></div>
+    <div class="stat-card"><div class="stat-num">${paidCount}</div><div class="stat-label">Al día con el pago</div></div>
+    <div class="stat-card"><div class="stat-num">${all.length - activeCount}</div><div class="stat-label">Dados de baja</div></div>
+  </div>`;
+
+  if (!all.length) {
+    html += `<div class="empty-state">Todavía no hay alumnos registrados.</div>`;
+  } else {
+    html += `<div class="admin-table-wrap"><table class="admin-table">
+      <thead><tr>
+        <th>Alumno</th><th>Activo</th><th>Pagó</th><th>Último pago</th><th>Teléfono</th><th>Notas privadas</th>
+      </tr></thead>
+      <tbody>
+        ${all.map(s => `
+          <tr class="${s.is_active ? '' : 'inactive-row'}">
+            <td class="ex-name">${s.full_name}</td>
+            <td><input type="checkbox" class="admin-check" data-field="is_active" data-id="${s.id}" ${s.is_active ? 'checked' : ''}></td>
+            <td><input type="checkbox" class="admin-check" data-field="has_paid" data-id="${s.id}" ${s.has_paid ? 'checked' : ''}></td>
+            <td><input type="date" class="admin-input" data-field="last_payment_date" data-id="${s.id}" value="${s.last_payment_date ?? ''}"></td>
+            <td><input type="text" class="admin-input" data-field="phone" data-id="${s.id}" value="${escapeAttr(s.phone)}" placeholder="Opcional"></td>
+            <td><input type="text" class="admin-input" data-field="admin_notes" data-id="${s.id}" value="${escapeAttr(s.admin_notes)}" placeholder="Solo vos la ves"></td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table></div>`;
+  }
+
+  mainContent.innerHTML = html;
+
+  mainContent.querySelectorAll('.admin-check').forEach(cb => {
+    cb.addEventListener('change', () => updateAdminField(cb.dataset.id, cb.dataset.field, cb.checked));
+  });
+  mainContent.querySelectorAll('.admin-input').forEach(inp => {
+    inp.addEventListener('blur', () => updateAdminField(inp.dataset.id, inp.dataset.field, inp.value.trim() || null));
+    inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') inp.blur(); });
+  });
+}
+
+async function updateAdminField(studentId, field, value) {
+  const { error } = await supabase.from('profiles').update({ [field]: value }).eq('id', studentId);
+  if (error) {
+    alert('No se pudo guardar: ' + error.message);
+    return;
+  }
+  if (field === 'is_active') {
+    await loadStudents();
+    showAdminPanel();
+  }
+}
+
+// ---------- Modals ----------
+function closeModal() { modalRoot.innerHTML = ''; }
+
+async function saveNotes(input) {
+  const exId = input.dataset.ex;
+  const value = input.value.trim() || null;
+  input.style.borderColor = '';
+  const { error } = await supabase.from('exercises').update({ notes: value }).eq('id', exId);
+  if (error) {
+    input.style.borderColor = 'var(--accent-line)';
+    input.title = 'No se pudo guardar: ' + error.message;
+  } else {
+    input.title = '';
+  }
+}
+
+function openDayModal(studentId, dayId = null) {
+  const isEdit = !!dayId;
+  modalRoot.innerHTML = `
+    <div class="modal-backdrop">
+      <div class="modal">
+        <h3>${isEdit ? 'Renombrar día' : 'Nuevo día de rutina'}</h3>
+        <div class="field">
+          <label>Nombre del día</label>
+          <input type="text" id="day-label-input" placeholder="Ej: Día 1 - Empuje">
+        </div>
+        <div class="modal-actions">
+          <button class="btn-secondary" id="modal-cancel">Cancelar</button>
+          <button class="btn-primary" id="modal-save">Guardar</button>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('modal-cancel').addEventListener('click', closeModal);
+  document.getElementById('modal-save').addEventListener('click', async () => {
+    const label = document.getElementById('day-label-input').value.trim();
+    if (!label) return;
+    if (isEdit) {
+      await supabase.from('routine_days').update({ day_label: label }).eq('id', dayId);
+    } else {
+      const { count } = await supabase.from('routine_days').select('*', { count: 'exact', head: true }).eq('student_id', studentId);
+      await supabase.from('routine_days').insert({ student_id: studentId, day_label: label, day_order: count || 0 });
+    }
+    closeModal();
+    renderRoutine(studentId, true);
+  });
+}
+
+async function deleteDay(dayId, studentId) {
+  if (!confirm('¿Eliminar este día y todos sus ejercicios?')) return;
+  await supabase.from('routine_days').delete().eq('id', dayId);
+  renderRoutine(studentId, true);
+}
+
+function openExerciseModal(dayId, studentId, exerciseId = null) {
+  const isEdit = !!exerciseId;
+  modalRoot.innerHTML = `
+    <div class="modal-backdrop">
+      <div class="modal">
+        <h3>${isEdit ? 'Editar ejercicio' : 'Nuevo ejercicio'}</h3>
+        <div class="field"><label>Nombre</label><input id="ex-name" type="text"></div>
+        <div class="field"><label>Series x reps</label><input id="ex-reps" type="text" placeholder="Ej: 3x8, 10/8/6x2, 3xFallo"></div>
+        <div class="field"><label>Notas</label><input id="ex-notes" type="text" placeholder="Opcional"></div>
+        <div class="modal-actions">
+          <button class="btn-secondary" id="modal-cancel">Cancelar</button>
+          <button class="btn-primary" id="modal-save">Guardar</button>
+        </div>
+      </div>
+    </div>`;
+
+  if (isEdit) {
+    supabase.from('exercises').select('*').eq('id', exerciseId).single().then(({ data }) => {
+      if (!data) return;
+      document.getElementById('ex-name').value = data.name || '';
+      document.getElementById('ex-reps').value = data.reps || '';
+      document.getElementById('ex-notes').value = data.notes || '';
+    });
+  }
+
+  document.getElementById('modal-cancel').addEventListener('click', closeModal);
+  document.getElementById('modal-save').addEventListener('click', async () => {
+    const payload = {
+      name: document.getElementById('ex-name').value.trim(),
+      reps: document.getElementById('ex-reps').value.trim() || null,
+      notes: document.getElementById('ex-notes').value.trim() || null,
+    };
+    if (!payload.name) return;
+    if (isEdit) {
+      await supabase.from('exercises').update(payload).eq('id', exerciseId);
+    } else {
+      const { count } = await supabase.from('exercises').select('*', { count: 'exact', head: true }).eq('routine_day_id', dayId);
+      await supabase.from('exercises').insert({ ...payload, routine_day_id: dayId, exercise_order: count || 0 });
+    }
+    closeModal();
+    renderRoutine(studentId, true);
+  });
+}
+
+async function deleteExercise(exerciseId, studentId) {
+  if (!confirm('¿Eliminar este ejercicio?')) return;
+  await supabase.from('exercises').delete().eq('id', exerciseId);
+  renderRoutine(studentId, true);
+}
+
+// ---------- Init ----------
+boot();
+</script>
+</body>
+</html>
