@@ -254,37 +254,49 @@
   .icon-btn:hover{background:var(--bg-card); color:var(--text);}
   .icon-btn.danger:hover{color:var(--accent);}
 
-  table.exercise-table{
-    width:100%;
-    border-collapse:collapse;
-  }
-  table.exercise-table th{
-    text-align:left;
-    font-size:11px;
-    color:var(--text-dim);
-    text-transform:uppercase;
-    letter-spacing:0.05em;
-    padding:10px 20px;
-    font-weight:600;
+  .exercise-list{display:flex; flex-direction:column;}
+  .exercise-item{
+    display:flex;
+    gap:16px;
+    padding:16px 20px;
     border-bottom:1px solid var(--line);
   }
-  table.exercise-table td{
-    padding:12px 20px;
-    font-size:14px;
-    border-bottom:1px solid var(--line);
-  }
-  table.exercise-table tr:last-child td{border-bottom:none;}
-  table.exercise-table td.ex-name{font-weight:600;}
-  table.exercise-table td.ex-notes{padding:6px 12px;}
-  .ex-name-cell{display:flex; align-items:center; gap:10px;}
-  .ex-thumb{
-    width:40px; height:40px;
+  .exercise-item:last-child{border-bottom:none;}
+  .ex-thumb-lg{
+    width:76px; height:76px;
     object-fit:cover;
-    border-radius:6px;
+    border-radius:10px;
     border:1px solid var(--line);
     cursor:pointer;
     flex-shrink:0;
+    background:#000;
   }
+  .ex-thumb-placeholder{
+    background:var(--bg-card);
+    cursor:default;
+  }
+  .ex-content{flex:1; min-width:0;}
+  .ex-top-row{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:10px;
+  }
+  .ex-title{font-weight:700; font-size:15px; line-height:1.3;}
+  .ex-meta-row{
+    display:flex;
+    align-items:center;
+    gap:16px;
+    margin-top:8px;
+    flex-wrap:wrap;
+  }
+  .ex-reps{
+    font-weight:600;
+    font-size:14px;
+    color:var(--text);
+    flex-shrink:0;
+  }
+  .ex-meta-row .notes-input{flex:1; min-width:140px;}
   .lightbox-img{
     max-width:90vw;
     max-height:90vh;
@@ -292,11 +304,18 @@
     border:1px solid var(--line);
   }
 
+  @media (max-width: 480px){
+    .exercise-item{gap:12px; padding:14px;}
+    .ex-thumb-lg{width:60px; height:60px;}
+    .ex-top-row{flex-direction:column; gap:6px;}
+    .row-actions{justify-content:flex-start;}
+  }
+
   /* GIF picker */
   .modal-wide{max-width:720px;}
   .gif-filters{
-    display:grid;
-    grid-template-columns:1fr 1fr 1fr;
+    display:flex;
+    flex-direction:column;
     gap:10px;
     margin-bottom:16px;
   }
@@ -506,7 +525,6 @@
     #app-view{flex-direction:column;}
     #sidebar{width:100%; border-right:none; border-bottom:1px solid var(--line);}
     #main-content{padding:24px;}
-    .gif-filters{grid-template-columns:1fr;}
     .gif-grid{grid-template-columns:repeat(2, 1fr);}
   }
 </style>
@@ -569,6 +587,7 @@
 </div>
 
 <div id="modal-root"></div>
+<div id="picker-modal-root"></div>
 
 <script src="exercises-data.js"></script>
 <script type="module">
@@ -621,6 +640,7 @@ const studentList = document.getElementById('student-list');
 const adminPanelBtn = document.getElementById('admin-panel-btn');
 const mainContent = document.getElementById('main-content');
 const modalRoot = document.getElementById('modal-root');
+const pickerModalRoot = document.getElementById('picker-modal-root');
 
 // ---------- Auth ----------
 loginForm.addEventListener('submit', async (e) => {
@@ -811,29 +831,28 @@ async function renderRoutine(studentId, editable) {
             <button class="icon-btn danger" data-action="delete-day" data-day="${day.id}">Eliminar</button>
           </div>` : ''}
         </div>
-        <table class="exercise-table">
-          <thead><tr>
-            <th>Ejercicio</th><th>Series x reps</th><th>Notas</th>${editable ? '<th></th>' : ''}
-          </tr></thead>
-          <tbody>
+        <div class="exercise-list">
             ${exercises.map(ex => `
-              <tr>
-                <td class="ex-name">
-                  <div class="ex-name-cell">
-                    ${ex.gif_url ? `<img class="ex-thumb" src="${ex.gif_url}" alt="" data-action="view-gif" data-url="${ex.gif_url}" loading="lazy">` : ''}
-                    <span>${ex.name}</span>
+              <div class="exercise-item">
+                ${ex.gif_url
+                  ? `<img class="ex-thumb-lg" src="${ex.gif_url}" alt="" data-action="view-gif" data-url="${ex.gif_url}" loading="lazy">`
+                  : `<div class="ex-thumb-lg ex-thumb-placeholder"></div>`}
+                <div class="ex-content">
+                  <div class="ex-top-row">
+                    <div class="ex-title">${ex.name}</div>
+                    ${editable ? `<div class="row-actions">
+                      <button class="icon-btn" data-action="edit-exercise" data-ex="${ex.id}" data-day="${day.id}">Editar</button>
+                      <button class="icon-btn danger" data-action="delete-exercise" data-ex="${ex.id}">Borrar</button>
+                    </div>` : ''}
                   </div>
-                </td>
-                <td>${ex.reps ?? '—'}</td>
-                <td class="ex-notes"><input type="text" class="notes-input" data-ex="${ex.id}" data-day="${day.id}" value="${escapeAttr(ex.notes)}" placeholder="Peso, comentario..."></td>
-                ${editable ? `<td><div class="row-actions">
-                  <button class="icon-btn" data-action="edit-exercise" data-ex="${ex.id}" data-day="${day.id}">Editar</button>
-                  <button class="icon-btn danger" data-action="delete-exercise" data-ex="${ex.id}">Borrar</button>
-                </div></td>` : ''}
-              </tr>
+                  <div class="ex-meta-row">
+                    <div class="ex-reps">${ex.reps ?? '—'}</div>
+                    <input type="text" class="notes-input" data-ex="${ex.id}" data-day="${day.id}" value="${escapeAttr(ex.notes)}" placeholder="Peso, comentario...">
+                  </div>
+                </div>
+              </div>
             `).join('')}
-          </tbody>
-        </table>
+        </div>
         ${editable ? `<div class="add-exercise-row">
           <button data-action="add-exercise" data-day="${day.id}">+ Agregar ejercicio</button>
         </div>` : ''}
@@ -962,7 +981,7 @@ function openGifPicker(onSelect) {
   const bodyParts = [...new Set(db.map(e => e.bodyPart))].sort();
   const equipments = [...new Set(db.map(e => e.equipment))].sort();
 
-  modalRoot.innerHTML = `
+  pickerModalRoot.innerHTML = `
     <div class="modal-backdrop">
       <div class="modal modal-wide">
         <h3>Elegir GIF</h3>
@@ -977,12 +996,13 @@ function openGifPicker(onSelect) {
         </div>
         <div id="gif-results" class="gif-grid"></div>
         <div class="modal-actions">
-          <button class="btn-secondary" id="modal-cancel">Cerrar</button>
+          <button class="btn-secondary" id="gif-picker-close">Cerrar</button>
         </div>
       </div>
     </div>`;
 
-  document.getElementById('modal-cancel').addEventListener('click', closeModal);
+  function closePicker() { pickerModalRoot.innerHTML = ''; }
+  document.getElementById('gif-picker-close').addEventListener('click', closePicker);
 
   const searchInput = document.getElementById('gif-search');
   const bodyPartSelect = document.getElementById('gif-bodypart');
@@ -1007,7 +1027,7 @@ function openGifPicker(onSelect) {
     }
 
     resultsEl.innerHTML = matches.map(ex => `
-      <button class="gif-card" data-id="${ex.id}">
+      <button type="button" class="gif-card" data-id="${ex.id}">
         <img src="${gifUrlFor(ex.id)}" loading="lazy" alt="${escapeAttr(ex.name)}">
         <div class="gif-card-name">${ex.name}</div>
         <div class="gif-card-tags">${BODY_PART_ES[ex.bodyPart] || ex.bodyPart} · ${EQUIPMENT_ES[ex.equipment] || ex.equipment}</div>
@@ -1018,7 +1038,7 @@ function openGifPicker(onSelect) {
       card.addEventListener('click', () => {
         const ex = db.find(e => e.id === card.dataset.id);
         onSelect(ex);
-        closeModal();
+        closePicker();
       });
     });
   }
