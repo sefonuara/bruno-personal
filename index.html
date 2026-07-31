@@ -176,7 +176,7 @@
     margin-top:12px;
   }
   #add-student-btn:hover{border-color:var(--accent-line); color:var(--accent);}
-  #admin-panel-btn{
+  #admin-panel-btn, #student-routine-btn, #student-profile-btn{
     background:transparent;
     border:1px solid var(--line);
     color:var(--text-dim);
@@ -185,8 +185,9 @@
     margin-top:12px;
     text-align:left;
   }
-  #admin-panel-btn.active{background:var(--accent-soft); color:var(--accent); border-color:var(--accent-line);}
-  #admin-panel-btn:hover{color:var(--accent);}
+  #admin-panel-btn.active, #student-routine-btn.active, #student-profile-btn.active{background:var(--accent-soft); color:var(--accent); border-color:var(--accent-line);}
+  #admin-panel-btn:hover, #student-routine-btn:hover, #student-profile-btn:hover{color:var(--accent);}
+  #student-routine-btn{margin-top:0;}
   #logout-btn{
     background:transparent;
     color:var(--text-dim);
@@ -456,6 +457,38 @@
   #add-day-btn:hover{border-color:var(--accent-line); color:var(--accent);}
 
   /* ---------- Admin panel ---------- */
+  /* ---------- Student profile ---------- */
+  .profile-form{
+    max-width:420px;
+    background:var(--bg-elevated);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:24px;
+  }
+  .profile-form-row{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:16px;
+  }
+  .optional-tag{color:var(--text-dim); font-weight:400; text-transform:none; letter-spacing:0;}
+  .profile-form select{
+    background:var(--bg);
+    border:1px solid var(--line);
+    color:var(--text);
+    border-radius:8px;
+    padding:10px 12px;
+    font-size:14px;
+    width:100%;
+    font-family:'Inter', sans-serif;
+  }
+  .profile-save-btn{width:auto; padding:10px 24px; margin-top:6px;}
+  .saved-msg{
+    display:none;
+    color:#6EE7A8;
+    font-size:13px;
+    margin-top:12px;
+  }
+
   .admin-stats{
     display:flex;
     gap:16px;
@@ -614,6 +647,8 @@
     <div class="who" id="who-am-i"></div>
     <div id="student-list"></div>
     <button id="admin-panel-btn" class="hidden">⚙ Administración</button>
+    <button id="student-routine-btn" class="hidden">🏋 Mi rutina</button>
+    <button id="student-profile-btn" class="hidden">👤 Mi perfil</button>
     <button id="logout-btn">Cerrar sesión</button>
   </div>
   <div id="main-content"></div>
@@ -793,6 +828,21 @@ async function boot() {
   } else {
     studentList.style.display = 'none';
     selectedStudentId = profile.id;
+    const routineBtn = document.getElementById('student-routine-btn');
+    const profileBtn = document.getElementById('student-profile-btn');
+    routineBtn.classList.remove('hidden');
+    profileBtn.classList.remove('hidden');
+    routineBtn.addEventListener('click', () => {
+      routineBtn.classList.add('active');
+      profileBtn.classList.remove('active');
+      renderRoutine(profile.id, false);
+    });
+    profileBtn.addEventListener('click', () => {
+      profileBtn.classList.add('active');
+      routineBtn.classList.remove('active');
+      renderProfileForm(profile.id);
+    });
+    routineBtn.classList.add('active');
     await renderRoutine(profile.id, false);
   }
 }
@@ -1085,6 +1135,90 @@ function openGifPicker(onSelect) {
   bodyPartSelect.addEventListener('change', renderResults);
   equipmentSelect.addEventListener('change', renderResults);
   renderResults();
+}
+
+// ---------- Student profile ----------
+async function renderProfileForm(studentId) {
+  mainContent.innerHTML = `<div class="empty-state">Cargando...</div>`;
+
+  const { data: profile, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', studentId)
+    .single();
+
+  if (error || !profile) {
+    mainContent.innerHTML = `<div class="empty-state">No se pudo cargar tu perfil.</div>`;
+    return;
+  }
+
+  const sexOptions = [
+    ['', 'Preferís no decir'],
+    ['femenino', 'Femenino'],
+    ['masculino', 'Masculino'],
+    ['otro', 'Otro'],
+  ];
+
+  mainContent.innerHTML = `
+    <h1>Mi perfil</h1>
+    <div class="subtitle">Estos datos los ves y editás solo vos.</div>
+    <div class="profile-form">
+      <div class="field">
+        <label>Sexo</label>
+        <select id="pf-sex">
+          ${sexOptions.map(([v, l]) => `<option value="${v}" ${profile.sex === v ? 'selected' : ''}>${l}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field">
+        <label>Fecha de nacimiento</label>
+        <input type="date" id="pf-birth" value="${profile.birth_date ?? ''}">
+      </div>
+      <div class="profile-form-row">
+        <div class="field">
+          <label>Altura (cm)</label>
+          <input type="number" id="pf-height" min="0" step="1" value="${profile.height_cm ?? ''}">
+        </div>
+        <div class="field">
+          <label>Peso (kg)</label>
+          <input type="number" id="pf-weight" min="0" step="0.1" value="${profile.weight_kg ?? ''}">
+        </div>
+      </div>
+      <div class="field">
+        <label>Teléfono</label>
+        <input type="text" id="pf-phone" value="${escapeAttr(profile.phone)}">
+      </div>
+      <div class="field">
+        <label>Gimnasio al que vas <span class="optional-tag">(opcional)</span></label>
+        <input type="text" id="pf-gym" placeholder="Opcional" value="${escapeAttr(profile.gym_name)}">
+      </div>
+      <button class="btn-primary profile-save-btn" id="pf-save">Guardar</button>
+      <div class="error-msg" id="pf-error"></div>
+      <div class="saved-msg" id="pf-saved">Guardado ✓</div>
+    </div>`;
+
+  document.getElementById('pf-save').addEventListener('click', async () => {
+    const errBox = document.getElementById('pf-error');
+    const savedBox = document.getElementById('pf-saved');
+    errBox.style.display = 'none';
+    savedBox.style.display = 'none';
+
+    const payload = {
+      sex: document.getElementById('pf-sex').value || null,
+      birth_date: document.getElementById('pf-birth').value || null,
+      height_cm: document.getElementById('pf-height').value ? parseFloat(document.getElementById('pf-height').value) : null,
+      weight_kg: document.getElementById('pf-weight').value ? parseFloat(document.getElementById('pf-weight').value) : null,
+      phone: document.getElementById('pf-phone').value.trim() || null,
+      gym_name: document.getElementById('pf-gym').value.trim() || null,
+    };
+
+    const { error: saveError } = await supabase.from('profiles').update(payload).eq('id', studentId);
+    if (saveError) {
+      errBox.textContent = 'No se pudo guardar: ' + saveError.message;
+      errBox.style.display = 'block';
+      return;
+    }
+    savedBox.style.display = 'block';
+  });
 }
 
 // ---------- Modals ----------
