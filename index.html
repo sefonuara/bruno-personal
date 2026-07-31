@@ -351,6 +351,7 @@
   .gif-card:hover{border-color:var(--accent-line);}
   .gif-card img{width:100%; aspect-ratio:1; object-fit:cover; border-radius:6px; background:#000;}
   .gif-card-name{font-size:12px; font-weight:600; line-height:1.2;}
+  .gif-card-name-en{font-size:11px; color:var(--text-dim); font-style:italic; line-height:1.2;}
   .gif-card-tags{font-size:11px; color:var(--text-dim);}
   .gif-more-note{
     grid-column:1 / -1;
@@ -1014,7 +1015,7 @@ function openGifPicker(onSelect) {
     const bp = bodyPartSelect.value;
     const eq = equipmentSelect.value;
     let matches = db.filter(ex =>
-      (!q || ex.name.toLowerCase().includes(q)) &&
+      (!q || ex.name.toLowerCase().includes(q) || (ex.nameEs || '').toLowerCase().includes(q)) &&
       (!bp || ex.bodyPart === bp) &&
       (!eq || ex.equipment === eq)
     );
@@ -1029,7 +1030,8 @@ function openGifPicker(onSelect) {
     resultsEl.innerHTML = matches.map(ex => `
       <button type="button" class="gif-card" data-id="${ex.id}">
         <img src="${gifUrlFor(ex.id)}" loading="lazy" alt="${escapeAttr(ex.name)}">
-        <div class="gif-card-name">${ex.name}</div>
+        <div class="gif-card-name">${ex.nameEs || ex.name}</div>
+        <div class="gif-card-name-en">${ex.name}</div>
         <div class="gif-card-tags">${BODY_PART_ES[ex.bodyPart] || ex.bodyPart} · ${EQUIPMENT_ES[ex.equipment] || ex.equipment}</div>
       </button>
     `).join('') + (total > 60 ? `<div class="gif-more-note">Mostrando 60 de ${total}. Afiná la búsqueda para ver más.</div>` : '');
@@ -1161,7 +1163,7 @@ function openExerciseModal(dayId, studentId, exerciseId = null) {
       pickedGif = { id: ex.id, name: ex.name, gifUrl: gifUrlFor(ex.id) };
       renderGifPreview(pickedGif.gifUrl);
       const nameInput = document.getElementById('ex-name');
-      if (!nameInput.value.trim()) nameInput.value = ex.name;
+      if (!nameInput.value.trim()) nameInput.value = ex.nameEs || ex.name;
     });
   });
 
