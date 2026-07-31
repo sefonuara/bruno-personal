@@ -275,28 +275,35 @@
     background:var(--bg-card);
     cursor:default;
   }
-  .ex-content{flex:1; min-width:0;}
-  .ex-top-row{
-    display:flex;
-    align-items:flex-start;
-    justify-content:space-between;
-    gap:10px;
+  .ex-content{
+    flex:1; min-width:0;
+    display:grid;
+    grid-template-columns:1fr auto;
+    grid-template-areas:
+      "title actions"
+      "meta   meta";
+    column-gap:10px;
+    row-gap:8px;
+    align-items:start;
   }
-  .ex-title{font-weight:700; font-size:15px; line-height:1.3;}
-  .ex-meta-row{
+  .ex-title{grid-area:title; font-weight:700; font-size:15px; line-height:1.3; align-self:center;}
+  .ex-actions{grid-area:actions; align-self:center;}
+  .ex-meta{
+    grid-area:meta;
     display:flex;
     align-items:center;
     gap:16px;
-    margin-top:8px;
     flex-wrap:wrap;
   }
+  .ex-meta-block{display:contents;}
+  .ex-meta-label{display:none;}
   .ex-reps{
     font-weight:600;
     font-size:14px;
     color:var(--text);
     flex-shrink:0;
   }
-  .ex-meta-row .notes-input{flex:1; min-width:140px;}
+  .ex-meta .notes-input{flex:1; min-width:140px;}
   .lightbox-img{
     max-width:90vw;
     max-height:90vh;
@@ -307,8 +314,33 @@
   @media (max-width: 480px){
     .exercise-item{gap:12px; padding:14px;}
     .ex-thumb-lg{width:60px; height:60px;}
-    .ex-top-row{flex-direction:column; gap:6px;}
-    .row-actions{justify-content:flex-start;}
+    .ex-content{
+      grid-template-columns:1fr auto;
+      grid-template-areas:
+        "title title"
+        "meta  meta"
+        ".     actions";
+      row-gap:10px;
+    }
+    .ex-actions{align-self:end;}
+    .ex-meta{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      column-gap:16px;
+      row-gap:2px;
+      align-items:start;
+    }
+    .ex-meta-block{display:block;}
+    .ex-meta-label{
+      display:block;
+      font-size:11px;
+      color:var(--text-dim);
+      text-transform:uppercase;
+      letter-spacing:0.04em;
+      margin-bottom:3px;
+    }
+    .ex-meta .notes-input{min-width:0; padding-left:0;}
+    .row-actions{justify-content:flex-end;}
   }
 
   /* GIF picker */
@@ -839,16 +871,20 @@ async function renderRoutine(studentId, editable) {
                   ? `<img class="ex-thumb-lg" src="${ex.gif_url}" alt="" data-action="view-gif" data-url="${ex.gif_url}" loading="lazy">`
                   : `<div class="ex-thumb-lg ex-thumb-placeholder"></div>`}
                 <div class="ex-content">
-                  <div class="ex-top-row">
-                    <div class="ex-title">${ex.name}</div>
-                    ${editable ? `<div class="row-actions">
-                      <button class="icon-btn" data-action="edit-exercise" data-ex="${ex.id}" data-day="${day.id}">Editar</button>
-                      <button class="icon-btn danger" data-action="delete-exercise" data-ex="${ex.id}">Borrar</button>
-                    </div>` : ''}
-                  </div>
-                  <div class="ex-meta-row">
-                    <div class="ex-reps">${ex.reps ?? '—'}</div>
-                    <input type="text" class="notes-input" data-ex="${ex.id}" data-day="${day.id}" value="${escapeAttr(ex.notes)}" placeholder="Peso, comentario...">
+                  <div class="ex-title">${ex.name}</div>
+                  ${editable ? `<div class="ex-actions row-actions">
+                    <button class="icon-btn" data-action="edit-exercise" data-ex="${ex.id}" data-day="${day.id}">Editar</button>
+                    <button class="icon-btn danger" data-action="delete-exercise" data-ex="${ex.id}">Borrar</button>
+                  </div>` : ''}
+                  <div class="ex-meta">
+                    <div class="ex-meta-block">
+                      <div class="ex-meta-label">Series y reps</div>
+                      <div class="ex-reps">${ex.reps ?? '—'}</div>
+                    </div>
+                    <div class="ex-meta-block">
+                      <div class="ex-meta-label">Notas</div>
+                      <input type="text" class="notes-input" data-ex="${ex.id}" data-day="${day.id}" value="${escapeAttr(ex.notes)}" placeholder="Peso, comentario...">
+                    </div>
                   </div>
                 </div>
               </div>
