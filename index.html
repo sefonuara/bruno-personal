@@ -276,6 +276,95 @@
   table.exercise-table tr:last-child td{border-bottom:none;}
   table.exercise-table td.ex-name{font-weight:600;}
   table.exercise-table td.ex-notes{padding:6px 12px;}
+  .ex-name-cell{display:flex; align-items:center; gap:10px;}
+  .ex-thumb{
+    width:40px; height:40px;
+    object-fit:cover;
+    border-radius:6px;
+    border:1px solid var(--line);
+    cursor:pointer;
+    flex-shrink:0;
+  }
+  .lightbox-img{
+    max-width:90vw;
+    max-height:90vh;
+    border-radius:12px;
+    border:1px solid var(--line);
+  }
+
+  /* GIF picker */
+  .modal-wide{max-width:720px;}
+  .gif-filters{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    gap:10px;
+    margin-bottom:16px;
+  }
+  .gif-filters select{
+    background:var(--bg);
+    border:1px solid var(--line);
+    color:var(--text);
+    border-radius:8px;
+    padding:10px;
+    font-size:13px;
+    font-family:'Inter', sans-serif;
+  }
+  .gif-grid{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:10px;
+    max-height:420px;
+    overflow-y:auto;
+    padding-right:4px;
+    margin-bottom:16px;
+  }
+  .gif-card{
+    background:var(--bg);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:8px;
+    text-align:left;
+    color:var(--text);
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+  }
+  .gif-card:hover{border-color:var(--accent-line);}
+  .gif-card img{width:100%; aspect-ratio:1; object-fit:cover; border-radius:6px; background:#000;}
+  .gif-card-name{font-size:12px; font-weight:600; line-height:1.2;}
+  .gif-card-tags{font-size:11px; color:var(--text-dim);}
+  .gif-more-note{
+    grid-column:1 / -1;
+    text-align:center;
+    color:var(--text-dim);
+    font-size:12px;
+    padding:10px;
+  }
+
+  /* Exercise modal gif field */
+  .gif-preview-empty{
+    background:var(--bg);
+    border:1px dashed var(--line);
+    border-radius:8px;
+    padding:16px;
+    text-align:center;
+    color:var(--text-dim);
+    font-size:13px;
+  }
+  #gif-preview img{
+    width:100%;
+    max-height:180px;
+    object-fit:contain;
+    border-radius:8px;
+    background:#000;
+  }
+  .gif-preview-actions{
+    display:flex;
+    gap:8px;
+    margin-top:8px;
+  }
+  .gif-preview-actions button{flex:none; padding:8px 14px; font-size:12px;}
+
   .notes-input{
     background:transparent;
     border:1px solid transparent;
@@ -417,6 +506,8 @@
     #app-view{flex-direction:column;}
     #sidebar{width:100%; border-right:none; border-bottom:1px solid var(--line);}
     #main-content{padding:24px;}
+    .gif-filters{grid-template-columns:1fr;}
+    .gif-grid{grid-template-columns:repeat(2, 1fr);}
   }
 </style>
 </head>
@@ -479,6 +570,7 @@
 
 <div id="modal-root"></div>
 
+<script src="exercises-data.js"></script>
 <script type="module">
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -497,6 +589,27 @@ let adminPanelOpen = false;
 function escapeAttr(str) {
   return String(str ?? '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
 }
+
+function gifUrlFor(id) {
+  return `https://raw.githubusercontent.com/omercotkd/exercises-gifs/refs/heads/main/assets/${id}.gif`;
+}
+
+const BODY_PART_ES = {
+  'back':'Espalda','cardio':'Cardio','chest':'Pecho','lower arms':'Antebrazo',
+  'lower legs':'Pantorrillas','neck':'Cuello','shoulders':'Hombros',
+  'upper arms':'Brazos','upper legs':'Piernas','waist':'Abdomen / cintura'
+};
+const EQUIPMENT_ES = {
+  'assisted':'Asistido','band':'Banda','barbell':'Barra','body weight':'Peso corporal',
+  'bosu ball':'Bosu','cable':'Polea/Cable','dumbbell':'Mancuerna','elliptical machine':'Elíptica',
+  'ez barbell':'Barra Z','hammer':'Máquina hammer','kettlebell':'Kettlebell',
+  'leverage machine':'Máquina de palanca','medicine ball':'Balón medicinal','olympic barbell':'Barra olímpica',
+  'resistance band':'Banda de resistencia','roller':'Rodillo','rope':'Cuerda',
+  'skierg machine':'Máquina de esquí','sled machine':'Trineo','smith machine':'Máquina Smith',
+  'stability ball':'Pelota de estabilidad','stationary bike':'Bicicleta fija','stepmill machine':'Escaladora',
+  'tire':'Neumático','trap bar':'Barra hexagonal','upper body ergometer':'Ergómetro de brazos',
+  'weighted':'Con peso adicional','wheel roller':'Rueda abdominal'
+};
 
 const loginView = document.getElementById('login-view');
 const appView = document.getElementById('app-view');
@@ -705,7 +818,12 @@ async function renderRoutine(studentId, editable) {
           <tbody>
             ${exercises.map(ex => `
               <tr>
-                <td class="ex-name">${ex.name}</td>
+                <td class="ex-name">
+                  <div class="ex-name-cell">
+                    ${ex.gif_url ? `<img class="ex-thumb" src="${ex.gif_url}" alt="" data-action="view-gif" data-url="${ex.gif_url}" loading="lazy">` : ''}
+                    <span>${ex.name}</span>
+                  </div>
+                </td>
                 <td>${ex.reps ?? '—'}</td>
                 <td class="ex-notes"><input type="text" class="notes-input" data-ex="${ex.id}" data-day="${day.id}" value="${escapeAttr(ex.notes)}" placeholder="Peso, comentario..."></td>
                 ${editable ? `<td><div class="row-actions">
@@ -728,6 +846,9 @@ async function renderRoutine(studentId, editable) {
   }
 
   mainContent.innerHTML = html;
+
+  mainContent.querySelectorAll('[data-action="view-gif"]').forEach(img =>
+    img.addEventListener('click', () => openGifLightbox(img.dataset.url)));
 
   mainContent.querySelectorAll('.notes-input').forEach(input => {
     input.addEventListener('blur', () => saveNotes(input));
@@ -827,6 +948,87 @@ async function updateAdminField(studentId, field, value) {
   }
 }
 
+// ---------- GIF picker ----------
+function openGifLightbox(url) {
+  modalRoot.innerHTML = `
+    <div class="modal-backdrop" id="lightbox-backdrop">
+      <img src="${url}" class="lightbox-img" alt="">
+    </div>`;
+  document.getElementById('lightbox-backdrop').addEventListener('click', closeModal);
+}
+
+function openGifPicker(onSelect) {
+  const db = window.EXERCISE_DB || [];
+  const bodyParts = [...new Set(db.map(e => e.bodyPart))].sort();
+  const equipments = [...new Set(db.map(e => e.equipment))].sort();
+
+  modalRoot.innerHTML = `
+    <div class="modal-backdrop">
+      <div class="modal modal-wide">
+        <h3>Elegir GIF</h3>
+        <div class="gif-filters">
+          <input type="text" id="gif-search" placeholder="Buscar por nombre...">
+          <select id="gif-bodypart"><option value="">Grupo muscular (todos)</option>
+            ${bodyParts.map(b => `<option value="${b}">${BODY_PART_ES[b] || b}</option>`).join('')}
+          </select>
+          <select id="gif-equipment"><option value="">Equipamiento (todos)</option>
+            ${equipments.map(e => `<option value="${e}">${EQUIPMENT_ES[e] || e}</option>`).join('')}
+          </select>
+        </div>
+        <div id="gif-results" class="gif-grid"></div>
+        <div class="modal-actions">
+          <button class="btn-secondary" id="modal-cancel">Cerrar</button>
+        </div>
+      </div>
+    </div>`;
+
+  document.getElementById('modal-cancel').addEventListener('click', closeModal);
+
+  const searchInput = document.getElementById('gif-search');
+  const bodyPartSelect = document.getElementById('gif-bodypart');
+  const equipmentSelect = document.getElementById('gif-equipment');
+  const resultsEl = document.getElementById('gif-results');
+
+  function renderResults() {
+    const q = searchInput.value.trim().toLowerCase();
+    const bp = bodyPartSelect.value;
+    const eq = equipmentSelect.value;
+    let matches = db.filter(ex =>
+      (!q || ex.name.toLowerCase().includes(q)) &&
+      (!bp || ex.bodyPart === bp) &&
+      (!eq || ex.equipment === eq)
+    );
+    const total = matches.length;
+    matches = matches.slice(0, 60);
+
+    if (!total) {
+      resultsEl.innerHTML = `<div class="empty-state">No se encontraron ejercicios con esos filtros.</div>`;
+      return;
+    }
+
+    resultsEl.innerHTML = matches.map(ex => `
+      <button class="gif-card" data-id="${ex.id}">
+        <img src="${gifUrlFor(ex.id)}" loading="lazy" alt="${escapeAttr(ex.name)}">
+        <div class="gif-card-name">${ex.name}</div>
+        <div class="gif-card-tags">${BODY_PART_ES[ex.bodyPart] || ex.bodyPart} · ${EQUIPMENT_ES[ex.equipment] || ex.equipment}</div>
+      </button>
+    `).join('') + (total > 60 ? `<div class="gif-more-note">Mostrando 60 de ${total}. Afiná la búsqueda para ver más.</div>` : '');
+
+    resultsEl.querySelectorAll('.gif-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const ex = db.find(e => e.id === card.dataset.id);
+        onSelect(ex);
+        closeModal();
+      });
+    });
+  }
+
+  searchInput.addEventListener('input', renderResults);
+  bodyPartSelect.addEventListener('change', renderResults);
+  equipmentSelect.addEventListener('change', renderResults);
+  renderResults();
+}
+
 // ---------- Modals ----------
 function closeModal() { modalRoot.innerHTML = ''; }
 
@@ -882,6 +1084,8 @@ async function deleteDay(dayId, studentId) {
 
 function openExerciseModal(dayId, studentId, exerciseId = null) {
   const isEdit = !!exerciseId;
+  let pickedGif = null; // { id, name, gifUrl } — set when the user picks one
+
   modalRoot.innerHTML = `
     <div class="modal-backdrop">
       <div class="modal">
@@ -889,6 +1093,14 @@ function openExerciseModal(dayId, studentId, exerciseId = null) {
         <div class="field"><label>Nombre</label><input id="ex-name" type="text"></div>
         <div class="field"><label>Series x reps</label><input id="ex-reps" type="text" placeholder="Ej: 3x8, 10/8/6x2, 3xFallo"></div>
         <div class="field"><label>Notas</label><input id="ex-notes" type="text" placeholder="Opcional"></div>
+        <div class="field">
+          <label>GIF demostrativo</label>
+          <div id="gif-preview" class="gif-preview-empty">Sin GIF elegido</div>
+          <div class="gif-preview-actions">
+            <button type="button" class="btn-secondary" id="pick-gif-btn">Elegir GIF</button>
+            <button type="button" class="btn-secondary hidden" id="remove-gif-btn">Quitar</button>
+          </div>
+        </div>
         <div class="modal-actions">
           <button class="btn-secondary" id="modal-cancel">Cancelar</button>
           <button class="btn-primary" id="modal-save">Guardar</button>
@@ -896,14 +1108,47 @@ function openExerciseModal(dayId, studentId, exerciseId = null) {
       </div>
     </div>`;
 
+  const gifPreview = document.getElementById('gif-preview');
+  const removeGifBtn = document.getElementById('remove-gif-btn');
+
+  function renderGifPreview(url) {
+    if (url) {
+      gifPreview.className = '';
+      gifPreview.innerHTML = `<img src="${url}" alt="preview">`;
+      removeGifBtn.classList.remove('hidden');
+    } else {
+      gifPreview.className = 'gif-preview-empty';
+      gifPreview.textContent = 'Sin GIF elegido';
+      removeGifBtn.classList.add('hidden');
+    }
+  }
+
   if (isEdit) {
     supabase.from('exercises').select('*').eq('id', exerciseId).single().then(({ data }) => {
       if (!data) return;
       document.getElementById('ex-name').value = data.name || '';
       document.getElementById('ex-reps').value = data.reps || '';
       document.getElementById('ex-notes').value = data.notes || '';
+      if (data.gif_url) {
+        pickedGif = { gifUrl: data.gif_url };
+        renderGifPreview(data.gif_url);
+      }
     });
   }
+
+  document.getElementById('pick-gif-btn').addEventListener('click', () => {
+    openGifPicker((ex) => {
+      pickedGif = { id: ex.id, name: ex.name, gifUrl: gifUrlFor(ex.id) };
+      renderGifPreview(pickedGif.gifUrl);
+      const nameInput = document.getElementById('ex-name');
+      if (!nameInput.value.trim()) nameInput.value = ex.name;
+    });
+  });
+
+  removeGifBtn.addEventListener('click', () => {
+    pickedGif = { gifUrl: null };
+    renderGifPreview(null);
+  });
 
   document.getElementById('modal-cancel').addEventListener('click', closeModal);
   document.getElementById('modal-save').addEventListener('click', async () => {
@@ -912,6 +1157,7 @@ function openExerciseModal(dayId, studentId, exerciseId = null) {
       reps: document.getElementById('ex-reps').value.trim() || null,
       notes: document.getElementById('ex-notes').value.trim() || null,
     };
+    if (pickedGif) payload.gif_url = pickedGif.gifUrl;
     if (!payload.name) return;
     if (isEdit) {
       await supabase.from('exercises').update(payload).eq('id', exerciseId);
