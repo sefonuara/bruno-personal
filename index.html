@@ -18,11 +18,23 @@
     --accent-soft: rgba(255,68,41,0.14);
     --accent-line: rgba(255,68,41,0.35);
   }
+  :root[data-theme="light"]{
+    --bg: #F3F3F5;
+    --bg-elevated: #FFFFFF;
+    --bg-card: #F0F0F3;
+    --line: #E0E0E5;
+    --text: #17181D;
+    --text-dim: #6B6D76;
+    --accent: #E8481F;
+    --accent-soft: rgba(232,72,31,0.09);
+    --accent-line: rgba(232,72,31,0.35);
+  }
   *{box-sizing:border-box; margin:0; padding:0;}
   body{
     background:var(--bg);
     color:var(--text);
     font-family:'Inter', sans-serif;
+    transition:background-color 0.15s, color 0.15s;
     min-height:100vh;
   }
   h1,h2,h3,.display{
@@ -95,6 +107,22 @@
     border-radius:6px;
   }
   .tab-btn.active{background:var(--accent-soft); color:var(--accent);}
+
+  .password-wrap{position:relative;}
+  .password-wrap input{padding-right:56px;}
+  .password-toggle{
+    position:absolute;
+    right:6px;
+    top:50%;
+    transform:translateY(-50%);
+    background:transparent;
+    color:var(--text-dim);
+    font-size:12px;
+    font-weight:600;
+    padding:6px 8px;
+    border-radius:6px;
+  }
+  .password-toggle:hover{color:var(--accent); background:var(--bg-card);}
   .field{margin-bottom:14px;}
   .field label{
     display:block;
@@ -136,6 +164,11 @@
     padding:24px 16px;
     display:flex;
     flex-direction:column;
+    position:sticky;
+    top:0;
+    align-self:flex-start;
+    height:100vh;
+    overflow-y:auto;
   }
   #sidebar .brand{
     font-size:28px;
@@ -188,6 +221,50 @@
   #admin-panel-btn.active, #student-routine-btn.active, #student-profile-btn.active{background:var(--accent-soft); color:var(--accent); border-color:var(--accent-line);}
   #admin-panel-btn:hover, #student-routine-btn:hover, #student-profile-btn:hover{color:var(--accent);}
   #student-routine-btn{margin-top:0;}
+  .contact-trainer-btn{
+    display:block;
+    background:transparent;
+    border:1px solid var(--line);
+    color:var(--text-dim);
+    padding:10px;
+    font-size:13px;
+    font-weight:600;
+    margin-top:12px;
+    text-align:left;
+    text-decoration:none;
+  }
+  .contact-trainer-btn:hover{border-color:#25D366; color:#25D366;}
+
+  .theme-switch-row{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    margin-top:16px;
+    padding:8px 0;
+    font-size:13px;
+  }
+  .theme-switch{
+    position:relative;
+    width:44px;
+    height:24px;
+    background:var(--bg);
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:0;
+    flex-shrink:0;
+  }
+  .theme-switch-knob{
+    position:absolute;
+    top:2px;
+    left:2px;
+    width:18px;
+    height:18px;
+    border-radius:50%;
+    background:var(--accent);
+    transition:left 0.15s;
+  }
+  :root[data-theme="light"] .theme-switch-knob{left:23px;}
   #logout-btn{
     background:transparent;
     color:var(--text-dim);
@@ -206,6 +283,45 @@
   }
   #main-content h1{font-size:38px;}
   .subtitle{color:var(--text-dim); font-size:14px; margin-bottom:32px;}
+  .routine-header-row{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:16px;
+  }
+  .routine-header-actions{display:flex; gap:8px; flex-shrink:0; flex-wrap:wrap;}
+  .duplicate-btn, .export-pdf-btn{
+    flex-shrink:0;
+    background:transparent;
+    border:1px solid var(--line);
+    color:var(--text-dim);
+    padding:9px 14px;
+    font-size:13px;
+    font-weight:600;
+  }
+  .duplicate-btn:hover, .export-pdf-btn:hover{border-color:var(--accent-line); color:var(--accent);}
+  .duplicate-target-list{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    max-height:260px;
+    overflow-y:auto;
+    margin-bottom:8px;
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:6px;
+  }
+  .duplicate-target-item{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:9px 10px;
+    border-radius:7px;
+    font-size:14px;
+    cursor:pointer;
+  }
+  .duplicate-target-item:hover{background:var(--bg-card);}
+  .duplicate-target-item input{width:16px; height:16px; accent-color:var(--accent); flex-shrink:0;}
 
   .empty-state{
     color:var(--text-dim);
@@ -224,6 +340,7 @@
     margin-bottom:20px;
     overflow:hidden;
   }
+  .day-card.day-hidden{opacity:0.6; border-style:dashed;}
   .day-header{
     display:flex;
     align-items:center;
@@ -243,6 +360,11 @@
     margin-bottom:6px;
     text-transform:uppercase;
   }
+  .day-header .tag.tag-hidden{
+    background:var(--bg-card);
+    color:var(--text-dim);
+    margin-left:6px;
+  }
   .day-header h3{font-size:22px;}
   .day-actions{display:flex; gap:6px;}
   .icon-btn{
@@ -256,6 +378,45 @@
   .icon-btn.danger:hover{color:var(--accent);}
 
   .exercise-list{display:flex; flex-direction:column;}
+
+  .superset-pair{
+    background:rgba(0,0,0,0.22);
+    border-left:2px solid var(--accent);
+  }
+  .superset-pair .exercise-item{border-bottom:1px dashed var(--line);}
+  .superset-pair .exercise-item:last-child{border-bottom:1px solid var(--line);}
+  .superset-badge{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:8px 20px 0 18px;
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    color:var(--accent);
+  }
+  .superset-unlink-btn{
+    background:transparent;
+    color:var(--text-dim);
+    font-size:11px;
+    font-weight:600;
+    text-transform:none;
+    letter-spacing:normal;
+    padding:2px 6px;
+  }
+  .superset-unlink-btn:hover{color:var(--accent);}
+  .superset-link-btn{
+    display:block;
+    width:100%;
+    background:transparent;
+    color:var(--text-dim);
+    font-size:11px;
+    padding:6px 20px;
+    text-align:left;
+    border-bottom:1px solid var(--line);
+  }
+  .superset-link-btn:hover{color:var(--accent); background:var(--bg-card);}
   .exercise-item{
     display:flex;
     gap:16px;
@@ -282,7 +443,8 @@
     grid-template-columns:1fr auto;
     grid-template-areas:
       "title actions"
-      "meta   meta";
+      "meta   meta"
+      "notes  notes";
     column-gap:10px;
     row-gap:8px;
     align-items:start;
@@ -291,20 +453,28 @@
   .ex-actions{grid-area:actions; align-self:center;}
   .ex-meta{
     grid-area:meta;
-    display:flex;
-    align-items:center;
-    gap:16px;
-    flex-wrap:wrap;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    column-gap:16px;
+    row-gap:2px;
+    align-items:start;
   }
-  .ex-meta-block{display:contents;}
-  .ex-meta-label{display:none;}
+  .ex-meta-block{display:block;}
+  .ex-meta-label{
+    display:block;
+    font-size:11px;
+    color:var(--text-dim);
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+    margin-bottom:3px;
+  }
   .ex-reps{
     font-weight:600;
     font-size:14px;
     color:var(--text);
-    flex-shrink:0;
   }
-  .ex-meta .notes-input{flex:1; min-width:140px;}
+  .ex-notes-block{grid-area:notes;}
+  .ex-meta .weight-input, .ex-notes-block .notes-input{min-width:0;}
   .lightbox-img{
     max-width:90vw;
     max-height:90vh;
@@ -320,27 +490,11 @@
       grid-template-areas:
         "title title"
         "meta  meta"
+        "notes notes"
         ".     actions";
       row-gap:10px;
     }
     .ex-actions{align-self:end;}
-    .ex-meta{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      column-gap:16px;
-      row-gap:2px;
-      align-items:start;
-    }
-    .ex-meta-block{display:block;}
-    .ex-meta-label{
-      display:block;
-      font-size:11px;
-      color:var(--text-dim);
-      text-transform:uppercase;
-      letter-spacing:0.04em;
-      margin-bottom:3px;
-    }
-    .ex-meta .notes-input{min-width:0; padding-left:0;}
     .row-actions{justify-content:flex-end;}
   }
 
@@ -491,6 +645,7 @@
 
   .admin-stats{
     display:flex;
+    flex-wrap:wrap;
     gap:16px;
     margin-bottom:28px;
   }
@@ -500,6 +655,7 @@
     border-radius:12px;
     padding:18px 22px;
     flex:1;
+    min-width:130px;
   }
   .stat-num{
     font-family:'Bebas Neue', sans-serif;
@@ -554,6 +710,54 @@
   .admin-input:hover{background:var(--bg-card);}
   .admin-input:focus{background:var(--bg-card); border-color:var(--accent-line);}
 
+  .pay-badge{
+    display:inline-block;
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+    padding:3px 8px;
+    border-radius:5px;
+  }
+  .pay-badge.pay-al_dia{background:rgba(110,231,168,0.14); color:#6EE7A8;}
+  .pay-badge.pay-adeuda{background:var(--accent-soft); color:var(--accent);}
+  .pay-badge.pay-adelantado{background:rgba(122,167,255,0.14); color:#7AA7FF;}
+  .pay-sub{font-size:11px; color:var(--text-dim); margin-top:3px;}
+  .payment-status-summary{margin-bottom:20px;}
+  .payment-form-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    grid-auto-rows:auto;
+    column-gap:10px;
+    row-gap:6px;
+    margin-bottom:10px;
+    align-items:end;
+  }
+  .payment-form-grid label{
+    font-size:12px;
+    color:var(--text-dim);
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+  }
+  .payment-history{
+    max-height:220px;
+    overflow-y:auto;
+    border:1px solid var(--line);
+    border-radius:10px;
+    margin-bottom:16px;
+  }
+  .payment-history-row{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:10px;
+    padding:10px 14px;
+    border-bottom:1px solid var(--line);
+    font-size:13px;
+  }
+  .payment-history-row:last-child{border-bottom:none;}
+  .text-dim{color:var(--text-dim); font-size:12px;}
+
   /* ---------- Modal ---------- */
   .modal-backdrop{
     position:fixed; inset:0;
@@ -589,9 +793,42 @@
 
   @media (max-width: 720px){
     #app-view{flex-direction:column;}
-    #sidebar{width:100%; border-right:none; border-bottom:1px solid var(--line);}
+    #sidebar{
+      width:100%; border-right:none; border-bottom:1px solid var(--line);
+      position:static; height:auto; overflow-y:visible;
+    }
     #main-content{padding:24px;}
     .gif-grid{grid-template-columns:repeat(2, 1fr);}
+  }
+
+  @media print{
+    body{background:#fff !important; color:#000 !important;}
+    #sidebar, button, .add-exercise-row, .superset-link-btn, .duplicate-btn, .export-pdf-btn, .contact-trainer-btn{
+      display:none !important;
+    }
+    #app-view{display:block !important;}
+    #main-content{padding:0 !important; max-width:100% !important;}
+    .routine-header-row{display:block !important;}
+    h1, h3, .ex-title{color:#000 !important;}
+    .subtitle, .ex-meta-label, .tag{color:#555 !important;}
+    .day-card{
+      background:#fff !important;
+      border:1px solid #ccc !important;
+      break-inside:avoid;
+      page-break-inside:avoid;
+    }
+    .day-header{border-bottom:1px solid #ccc !important;}
+    .exercise-item{border-bottom:1px solid #eee !important; break-inside:avoid;}
+    .tag{background:#eee !important;}
+    .ex-thumb-lg{border:1px solid #ccc !important;}
+    .notes-input, .weight-input{
+      border:none !important;
+      background:transparent !important;
+      color:#000 !important;
+      padding:0 !important;
+    }
+    .superset-pair{background:#f6f6f6 !important; border-left:2px solid #000 !important;}
+    .superset-badge{color:#000 !important;}
   }
 </style>
 </head>
@@ -614,7 +851,10 @@
       </div>
       <div class="field">
         <label>Contraseña</label>
-        <input type="password" id="login-password" required autocomplete="current-password">
+        <div class="password-wrap">
+          <input type="password" id="login-password" required autocomplete="current-password">
+          <button type="button" class="password-toggle" data-target="login-password">Ver</button>
+        </div>
       </div>
       <button type="submit" class="btn-primary" id="login-btn">Ingresar</button>
       <div class="error-msg" id="login-error"></div>
@@ -632,7 +872,17 @@
       </div>
       <div class="field">
         <label>Contraseña</label>
-        <input type="password" id="signup-password" required minlength="6" autocomplete="new-password">
+        <div class="password-wrap">
+          <input type="password" id="signup-password" required minlength="6" autocomplete="new-password">
+          <button type="button" class="password-toggle" data-target="signup-password">Ver</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>Confirmar contraseña</label>
+        <div class="password-wrap">
+          <input type="password" id="signup-password-confirm" required minlength="6" autocomplete="new-password">
+          <button type="button" class="password-toggle" data-target="signup-password-confirm">Ver</button>
+        </div>
       </div>
       <button type="submit" class="btn-primary" id="signup-btn">Crear cuenta</button>
       <div class="error-msg" id="signup-error"></div>
@@ -649,6 +899,14 @@
     <button id="admin-panel-btn" class="hidden">⚙ Administración</button>
     <button id="student-routine-btn" class="hidden">🏋 Mi rutina</button>
     <button id="student-profile-btn" class="hidden">👤 Mi perfil</button>
+    <a href="https://wa.me/5493413788551" target="_blank" rel="noopener" id="contact-trainer-btn" class="hidden contact-trainer-btn">💬 Contactar profe</a>
+    <div class="theme-switch-row">
+      <span>🌙</span>
+      <button type="button" id="theme-switch" class="theme-switch" aria-label="Cambiar a modo claro">
+        <span class="theme-switch-knob"></span>
+      </button>
+      <span>☀️</span>
+    </div>
     <button id="logout-btn">Cerrar sesión</button>
   </div>
   <div id="main-content"></div>
@@ -734,6 +992,15 @@ const tabSignup = document.getElementById('tab-signup');
 const loginFormEl = document.getElementById('login-form');
 const signupFormEl = document.getElementById('signup-form');
 
+document.querySelectorAll('.password-toggle').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const input = document.getElementById(btn.dataset.target);
+    const showing = input.type === 'text';
+    input.type = showing ? 'password' : 'text';
+    btn.textContent = showing ? 'Ver' : 'Ocultar';
+  });
+});
+
 tabLogin.addEventListener('click', () => {
   tabLogin.classList.add('active');
   tabSignup.classList.remove('active');
@@ -755,6 +1022,13 @@ signupFormEl.addEventListener('submit', async (e) => {
   const full_name = document.getElementById('signup-name').value.trim();
   const email = document.getElementById('signup-email').value.trim();
   const password = document.getElementById('signup-password').value;
+  const passwordConfirm = document.getElementById('signup-password-confirm').value;
+
+  if (password !== passwordConfirm) {
+    signupError.textContent = 'Las contraseñas no coinciden.';
+    signupError.style.display = 'block';
+    return;
+  }
 
   signupBtn.disabled = true;
   signupBtn.textContent = 'Creando cuenta...';
@@ -843,6 +1117,7 @@ async function boot() {
       renderProfileForm(profile.id);
     });
     routineBtn.classList.add('active');
+    document.getElementById('contact-trainer-btn').classList.remove('hidden');
     await renderRoutine(profile.id, false);
   }
 }
@@ -884,6 +1159,64 @@ function selectStudent(id) {
 }
 
 // ---------- Routine rendering ----------
+function renderExerciseItem(ex, editable, day) {
+  return `
+    <div class="exercise-item">
+      ${ex.gif_url
+        ? `<img class="ex-thumb-lg" src="${ex.gif_url}" alt="" data-action="view-gif" data-url="${ex.gif_url}" loading="lazy">`
+        : `<div class="ex-thumb-lg ex-thumb-placeholder"></div>`}
+      <div class="ex-content">
+        <div class="ex-title">${ex.name}</div>
+        ${editable ? `<div class="ex-actions row-actions">
+          <button class="icon-btn" data-action="edit-exercise" data-ex="${ex.id}" data-day="${day.id}">Editar</button>
+          <button class="icon-btn danger" data-action="delete-exercise" data-ex="${ex.id}">Borrar</button>
+        </div>` : ''}
+        <div class="ex-meta">
+          <div class="ex-meta-block">
+            <div class="ex-meta-label">Series y reps</div>
+            <div class="ex-reps">${ex.reps ?? '—'}</div>
+          </div>
+          <div class="ex-meta-block">
+            <div class="ex-meta-label">Peso</div>
+            <input type="text" class="weight-input" data-ex="${ex.id}" data-day="${day.id}" value="${escapeAttr(ex.weight)}" placeholder="Ej: 10kg">
+          </div>
+        </div>
+        <div class="ex-notes-block">
+          <div class="ex-meta-label">Notas</div>
+          <input type="text" class="notes-input" data-ex="${ex.id}" data-day="${day.id}" value="${escapeAttr(ex.notes)}" placeholder="Comentarios...">
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderExerciseList(exercises, editable, day) {
+  let out = '';
+  for (let i = 0; i < exercises.length; i++) {
+    const ex = exercises[i];
+    if (ex._pairedAsSecond) continue;
+    const next = exercises[i + 1];
+
+    if (ex.groups_with_next && next) {
+      next._pairedAsSecond = true;
+      out += `
+        <div class="superset-pair">
+          <div class="superset-badge">
+            Biserie
+            ${editable ? `<button class="superset-unlink-btn" data-action="toggle-superset" data-ex="${ex.id}" data-day="${day.id}">Separar</button>` : ''}
+          </div>
+          ${renderExerciseItem(ex, editable, day)}
+          ${renderExerciseItem(next, editable, day)}
+        </div>`;
+    } else {
+      out += renderExerciseItem(ex, editable, day);
+      if (editable && next) {
+        out += `<button class="superset-link-btn" data-action="toggle-superset" data-ex="${ex.id}" data-day="${day.id}">+ Unir en biserie con el siguiente</button>`;
+      }
+    }
+  }
+  return out;
+}
+
 async function renderRoutine(studentId, editable) {
   mainContent.innerHTML = `<div class="empty-state">Cargando...</div>`;
 
@@ -895,50 +1228,37 @@ async function renderRoutine(studentId, editable) {
 
   const student = editable ? students.find(s => s.id === studentId) : currentProfile;
 
-  let html = `<h1>${student ? student.full_name : ''}</h1>`;
-  html += `<div class="subtitle">${editable ? 'Rutina del alumno' : 'Tu rutina'}</div>`;
+  let html = `<div class="routine-header-row">
+    <div>
+      <h1>${student ? student.full_name : ''}</h1>
+      <div class="subtitle">${editable ? 'Rutina del alumno' : 'Tu rutina'}</div>
+    </div>
+    <div class="routine-header-actions">
+      <button class="btn-secondary export-pdf-btn" id="export-pdf-btn">📄 Exportar PDF</button>
+      ${editable ? `<button class="btn-secondary duplicate-btn" id="duplicate-routine-btn">📋 Duplicar rutina</button>` : ''}
+    </div>
+  </div>`;
 
   if (!days || !days.length) {
     html += `<div class="empty-state">${editable ? 'Este alumno todavía no tiene rutina cargada.' : 'Tu profe todavía no cargó tu rutina.'}</div>`;
   } else {
     days.forEach((day, idx) => {
       const exercises = (day.exercises || []).sort((a,b) => a.exercise_order - b.exercise_order);
-      html += `<div class="day-card">
+      html += `<div class="day-card${editable && !day.visible_to_student ? ' day-hidden' : ''}">
         <div class="day-header">
           <div>
             <div class="tag">Día ${idx + 1}</div>
+            ${editable && !day.visible_to_student ? `<div class="tag tag-hidden">Oculto para el alumno</div>` : ''}
             <h3>${day.day_label}</h3>
           </div>
           ${editable ? `<div class="day-actions">
+            <button class="icon-btn" data-action="toggle-visible" data-day="${day.id}">${day.visible_to_student ? '🚫 Ocultar' : '👁 Mostrar'}</button>
             <button class="icon-btn" data-action="rename-day" data-day="${day.id}">Renombrar</button>
             <button class="icon-btn danger" data-action="delete-day" data-day="${day.id}">Eliminar</button>
           </div>` : ''}
         </div>
         <div class="exercise-list">
-            ${exercises.map(ex => `
-              <div class="exercise-item">
-                ${ex.gif_url
-                  ? `<img class="ex-thumb-lg" src="${ex.gif_url}" alt="" data-action="view-gif" data-url="${ex.gif_url}" loading="lazy">`
-                  : `<div class="ex-thumb-lg ex-thumb-placeholder"></div>`}
-                <div class="ex-content">
-                  <div class="ex-title">${ex.name}</div>
-                  ${editable ? `<div class="ex-actions row-actions">
-                    <button class="icon-btn" data-action="edit-exercise" data-ex="${ex.id}" data-day="${day.id}">Editar</button>
-                    <button class="icon-btn danger" data-action="delete-exercise" data-ex="${ex.id}">Borrar</button>
-                  </div>` : ''}
-                  <div class="ex-meta">
-                    <div class="ex-meta-block">
-                      <div class="ex-meta-label">Series y reps</div>
-                      <div class="ex-reps">${ex.reps ?? '—'}</div>
-                    </div>
-                    <div class="ex-meta-block">
-                      <div class="ex-meta-label">Notas</div>
-                      <input type="text" class="notes-input" data-ex="${ex.id}" data-day="${day.id}" value="${escapeAttr(ex.notes)}" placeholder="Peso, comentario...">
-                    </div>
-                  </div>
-                </div>
-              </div>
-            `).join('')}
+            ${renderExerciseList(exercises, editable, day)}
         </div>
         ${editable ? `<div class="add-exercise-row">
           <button data-action="add-exercise" data-day="${day.id}">+ Agregar ejercicio</button>
@@ -963,8 +1283,23 @@ async function renderRoutine(studentId, editable) {
     });
   });
 
+  mainContent.querySelectorAll('.weight-input').forEach(input => {
+    input.addEventListener('blur', () => saveWeight(input));
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') input.blur();
+    });
+  });
+
+  mainContent.querySelectorAll('[data-action="toggle-superset"]').forEach(btn =>
+    btn.addEventListener('click', () => toggleSuperset(btn.dataset.ex, studentId)));
+
+  document.getElementById('export-pdf-btn').addEventListener('click', () => exportRoutinePDF(student));
+
   if (editable) {
+    document.getElementById('duplicate-routine-btn').addEventListener('click', () => openDuplicateModal(studentId));
     document.getElementById('add-day-btn').addEventListener('click', () => openDayModal(studentId));
+    mainContent.querySelectorAll('[data-action="toggle-visible"]').forEach(b =>
+      b.addEventListener('click', () => toggleDayVisibility(b.dataset.day, studentId)));
     mainContent.querySelectorAll('[data-action="rename-day"]').forEach(b =>
       b.addEventListener('click', () => openDayModal(studentId, b.dataset.day)));
     mainContent.querySelectorAll('[data-action="delete-day"]').forEach(b =>
@@ -979,6 +1314,37 @@ async function renderRoutine(studentId, editable) {
 }
 
 // ---------- Admin panel ----------
+function addMonths(date, months) {
+  const d = new Date(date);
+  d.setMonth(d.getMonth() + Number(months));
+  return d;
+}
+
+function formatDateEs(date) {
+  return date.toLocaleDateString('es-AR');
+}
+
+function computePaymentStatus(profile, payments) {
+  const totalMonths = (payments || []).reduce((sum, p) => sum + Number(p.period_months || 1), 0);
+  const start = new Date(profile.created_at);
+  const paidThrough = addMonths(start, totalMonths);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const diffDays = Math.round((paidThrough - today) / 86400000);
+  let status;
+  if (diffDays < 0) status = 'adeuda';
+  else if (diffDays > 35) status = 'adelantado';
+  else status = 'al_dia';
+  return { status, paidThrough, diffDays };
+}
+
+function paymentBadge(info) {
+  const labels = { adeuda: 'Adeuda', al_dia: 'Al día', adelantado: 'Adelantado' };
+  const dateStr = formatDateEs(info.paidThrough);
+  const sub = info.status === 'adeuda' ? `desde ${dateStr}` : `vence ${dateStr}`;
+  return `<span class="pay-badge pay-${info.status}">${labels[info.status]}</span><div class="pay-sub">${sub}</div>`;
+}
+
 async function showAdminPanel() {
   adminPanelOpen = true;
   selectedStudentId = null;
@@ -998,14 +1364,32 @@ async function showAdminPanel() {
     return;
   }
 
+  const studentIds = all.map(s => s.id);
+  const { data: allPayments } = studentIds.length
+    ? await supabase.from('payments').select('*').in('student_id', studentIds)
+    : { data: [] };
+
+  const paymentsByStudent = {};
+  (allPayments || []).forEach(p => {
+    (paymentsByStudent[p.student_id] ||= []).push(p);
+  });
+
+  const statusByStudent = {};
+  all.forEach(s => { statusByStudent[s.id] = computePaymentStatus(s, paymentsByStudent[s.id]); });
+
   const activeCount = all.filter(s => s.is_active).length;
-  const paidCount = all.filter(s => s.is_active && s.has_paid).length;
+  const activeStudents = all.filter(s => s.is_active);
+  const alDiaCount = activeStudents.filter(s => statusByStudent[s.id].status === 'al_dia').length;
+  const adeudaCount = activeStudents.filter(s => statusByStudent[s.id].status === 'adeuda').length;
+  const adelantadoCount = activeStudents.filter(s => statusByStudent[s.id].status === 'adelantado').length;
 
   let html = `<h1>Administración</h1>`;
   html += `<div class="subtitle">${all.length} alumnos en total</div>`;
   html += `<div class="admin-stats">
     <div class="stat-card"><div class="stat-num">${activeCount}</div><div class="stat-label">Activos</div></div>
-    <div class="stat-card"><div class="stat-num">${paidCount}</div><div class="stat-label">Al día con el pago</div></div>
+    <div class="stat-card"><div class="stat-num">${alDiaCount}</div><div class="stat-label">Al día</div></div>
+    <div class="stat-card"><div class="stat-num">${adeudaCount}</div><div class="stat-label">Adeudan</div></div>
+    <div class="stat-card"><div class="stat-num">${adelantadoCount}</div><div class="stat-label">Adelantados</div></div>
     <div class="stat-card"><div class="stat-num">${all.length - activeCount}</div><div class="stat-label">Dados de baja</div></div>
   </div>`;
 
@@ -1014,15 +1398,15 @@ async function showAdminPanel() {
   } else {
     html += `<div class="admin-table-wrap"><table class="admin-table">
       <thead><tr>
-        <th>Alumno</th><th>Activo</th><th>Pagó</th><th>Último pago</th><th>Teléfono</th><th>Notas privadas</th>
+        <th>Alumno</th><th>Activo</th><th>Pago</th><th></th><th>Teléfono</th><th>Notas privadas</th>
       </tr></thead>
       <tbody>
         ${all.map(s => `
           <tr class="${s.is_active ? '' : 'inactive-row'}">
             <td class="ex-name">${s.full_name}</td>
             <td><input type="checkbox" class="admin-check" data-field="is_active" data-id="${s.id}" ${s.is_active ? 'checked' : ''}></td>
-            <td><input type="checkbox" class="admin-check" data-field="has_paid" data-id="${s.id}" ${s.has_paid ? 'checked' : ''}></td>
-            <td><input type="date" class="admin-input" data-field="last_payment_date" data-id="${s.id}" value="${s.last_payment_date ?? ''}"></td>
+            <td>${paymentBadge(statusByStudent[s.id])}</td>
+            <td><button class="icon-btn" data-action="manage-payments" data-id="${s.id}" data-name="${escapeAttr(s.full_name)}">Gestionar pagos</button></td>
             <td><input type="text" class="admin-input" data-field="phone" data-id="${s.id}" value="${escapeAttr(s.phone)}" placeholder="Opcional"></td>
             <td><input type="text" class="admin-input" data-field="admin_notes" data-id="${s.id}" value="${escapeAttr(s.admin_notes)}" placeholder="Solo vos la ves"></td>
           </tr>
@@ -1039,6 +1423,90 @@ async function showAdminPanel() {
   mainContent.querySelectorAll('.admin-input').forEach(inp => {
     inp.addEventListener('blur', () => updateAdminField(inp.dataset.id, inp.dataset.field, inp.value.trim() || null));
     inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') inp.blur(); });
+  });
+  mainContent.querySelectorAll('[data-action="manage-payments"]').forEach(btn => {
+    btn.addEventListener('click', () => openPaymentsModal(btn.dataset.id, btn.dataset.name));
+  });
+}
+
+async function openPaymentsModal(studentId, studentName) {
+  modalRoot.innerHTML = `<div class="modal-backdrop"><div class="modal modal-wide"><div class="empty-state">Cargando...</div></div></div>`;
+
+  const { data: profile } = await supabase.from('profiles').select('*').eq('id', studentId).single();
+  const { data: payments } = await supabase
+    .from('payments')
+    .select('*')
+    .eq('student_id', studentId)
+    .order('payment_date', { ascending: false });
+
+  const info = computePaymentStatus(profile, payments);
+
+  modalRoot.innerHTML = `
+    <div class="modal-backdrop">
+      <div class="modal modal-wide">
+        <h3>Pagos de ${studentName}</h3>
+        <div class="payment-status-summary">${paymentBadge(info)}</div>
+
+        <div class="field"><label>Nuevo pago</label></div>
+        <div class="payment-form-grid">
+          <label>Fecha del pago</label>
+          <label>Meses que cubre</label>
+          <label>Monto <span class="optional-tag">(opcional)</span></label>
+          <input type="date" id="pay-date" value="${new Date().toISOString().slice(0,10)}">
+          <input type="number" id="pay-months" min="1" step="1" value="1">
+          <input type="number" id="pay-amount" min="0" step="0.01" placeholder="Opcional">
+        </div>
+        <div class="field"><input type="text" id="pay-notes" placeholder="Nota (opcional)"></div>
+        <button class="btn-primary" id="pay-save-btn" style="margin-bottom:16px;">Registrar pago</button>
+        <div class="error-msg" id="pay-error"></div>
+
+        <div class="field"><label>Historial</label></div>
+        <div class="payment-history">
+          ${!payments || !payments.length ? '<div class="empty-state">Todavía no hay pagos registrados.</div>' : payments.map(p => `
+            <div class="payment-history-row">
+              <div>
+                <strong>${formatDateEs(new Date(p.payment_date))}</strong>
+                <span class="text-dim"> · ${p.period_months} ${Number(p.period_months) === 1 ? 'mes' : 'meses'}${p.amount != null ? ' · $' + p.amount : ''}</span>
+                ${p.notes ? `<div class="text-dim">${p.notes}</div>` : ''}
+              </div>
+              <button class="icon-btn danger" data-action="delete-payment" data-payment="${p.id}">Borrar</button>
+            </div>
+          `).join('')}
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn-secondary" id="modal-cancel">Cerrar</button>
+        </div>
+      </div>
+    </div>`;
+
+  document.getElementById('modal-cancel').addEventListener('click', closeModal);
+
+  document.getElementById('pay-save-btn').addEventListener('click', async () => {
+    const errBox = document.getElementById('pay-error');
+    errBox.style.display = 'none';
+    const payload = {
+      student_id: studentId,
+      payment_date: document.getElementById('pay-date').value || new Date().toISOString().slice(0,10),
+      period_months: parseInt(document.getElementById('pay-months').value) || 1,
+      amount: document.getElementById('pay-amount').value ? parseFloat(document.getElementById('pay-amount').value) : null,
+      notes: document.getElementById('pay-notes').value.trim() || null,
+    };
+    const { error } = await supabase.from('payments').insert(payload);
+    if (error) {
+      errBox.textContent = 'No se pudo guardar: ' + error.message;
+      errBox.style.display = 'block';
+      return;
+    }
+    openPaymentsModal(studentId, studentName);
+  });
+
+  modalRoot.querySelectorAll('[data-action="delete-payment"]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!confirm('¿Borrar este pago?')) return;
+      await supabase.from('payments').delete().eq('id', btn.dataset.payment);
+      openPaymentsModal(studentId, studentName);
+    });
   });
 }
 
@@ -1237,6 +1705,130 @@ async function saveNotes(input) {
   }
 }
 
+async function saveWeight(input) {
+  const exId = input.dataset.ex;
+  const value = input.value.trim() || null;
+  input.style.borderColor = '';
+  const { error } = await supabase.from('exercises').update({ weight: value }).eq('id', exId);
+  if (error) {
+    input.style.borderColor = 'var(--accent-line)';
+    input.title = 'No se pudo guardar: ' + error.message;
+  } else {
+    input.title = '';
+  }
+}
+
+function exportRoutinePDF(student) {
+  const name = student ? student.full_name : 'Rutina';
+  const prevTitle = document.title;
+  document.title = `Rutina - ${name}`;
+  window.addEventListener('afterprint', () => { document.title = prevTitle; }, { once: true });
+  window.print();
+}
+
+async function toggleSuperset(exId, studentId) {
+  const { data: current } = await supabase.from('exercises').select('groups_with_next').eq('id', exId).single();
+  const newValue = !(current && current.groups_with_next);
+  const { error } = await supabase.from('exercises').update({ groups_with_next: newValue }).eq('id', exId);
+  if (error) {
+    alert('No se pudo guardar: ' + error.message);
+    return;
+  }
+  renderRoutine(studentId, true);
+}
+
+// ---------- Duplicate routine ----------
+function openDuplicateModal(sourceStudentId) {
+  const sourceStudent = students.find(s => s.id === sourceStudentId);
+  const others = students.filter(s => s.id !== sourceStudentId);
+
+  modalRoot.innerHTML = `
+    <div class="modal-backdrop">
+      <div class="modal">
+        <h3>Duplicar rutina</h3>
+        <div class="sub" style="margin-bottom:16px;">Copiá la rutina de <strong>${sourceStudent ? sourceStudent.full_name : 'este alumno'}</strong> a otro alumno. Se agrega como días nuevos, no borra lo que ya tenga.</div>
+        ${others.length ? `<div class="duplicate-target-list">
+          ${others.map(s => `
+            <label class="duplicate-target-item">
+              <input type="checkbox" class="duplicate-target-check" value="${s.id}">
+              <span>${s.full_name}</span>
+            </label>
+          `).join('')}
+        </div>` : `<div class="empty-state">No hay otros alumnos activos para copiarle la rutina.</div>`}
+        <div class="modal-actions">
+          <button class="btn-secondary" id="modal-cancel">Cancelar</button>
+          <button class="btn-primary" id="modal-save" ${others.length ? '' : 'disabled'}>Duplicar</button>
+        </div>
+        <div class="error-msg" id="duplicate-error"></div>
+      </div>
+    </div>`;
+
+  document.getElementById('modal-cancel').addEventListener('click', closeModal);
+  document.getElementById('modal-save').addEventListener('click', async () => {
+    const targets = [...document.querySelectorAll('.duplicate-target-check:checked')].map(c => c.value);
+    if (!targets.length) return;
+
+    const saveBtn = document.getElementById('modal-save');
+    const errBox = document.getElementById('duplicate-error');
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Duplicando...';
+    errBox.style.display = 'none';
+
+    try {
+      await duplicateRoutine(sourceStudentId, targets);
+      closeModal();
+    } catch (err) {
+      errBox.textContent = 'No se pudo duplicar: ' + err.message;
+      errBox.style.display = 'block';
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Duplicar';
+    }
+  });
+}
+
+async function duplicateRoutine(sourceStudentId, targetStudentIds) {
+  const { data: sourceDays, error: fetchError } = await supabase
+    .from('routine_days')
+    .select('*, exercises(*)')
+    .eq('student_id', sourceStudentId)
+    .order('day_order');
+  if (fetchError) throw fetchError;
+  if (!sourceDays || !sourceDays.length) throw new Error('Este alumno no tiene días de rutina para copiar.');
+
+  for (const targetId of targetStudentIds) {
+    const { count } = await supabase
+      .from('routine_days')
+      .select('*', { count: 'exact', head: true })
+      .eq('student_id', targetId);
+    let orderOffset = count || 0;
+
+    for (const day of sourceDays) {
+      const { data: newDay, error: dayError } = await supabase
+        .from('routine_days')
+        .insert({ student_id: targetId, day_label: day.day_label, day_order: orderOffset })
+        .select()
+        .single();
+      if (dayError) throw dayError;
+      orderOffset++;
+
+      const exercises = (day.exercises || []).sort((a, b) => a.exercise_order - b.exercise_order);
+      for (const ex of exercises) {
+        const { error: exError } = await supabase.from('exercises').insert({
+          routine_day_id: newDay.id,
+          name: ex.name,
+          sets: ex.sets,
+          reps: ex.reps,
+          notes: null,
+          gif_url: ex.gif_url,
+          groups_with_next: ex.groups_with_next,
+          exercise_order: ex.exercise_order,
+        });
+        if (exError) throw exError;
+      }
+    }
+  }
+}
+
 function openDayModal(studentId, dayId = null) {
   const isEdit = !!dayId;
   modalRoot.innerHTML = `
@@ -1271,6 +1863,17 @@ function openDayModal(studentId, dayId = null) {
 async function deleteDay(dayId, studentId) {
   if (!confirm('¿Eliminar este día y todos sus ejercicios?')) return;
   await supabase.from('routine_days').delete().eq('id', dayId);
+  renderRoutine(studentId, true);
+}
+
+async function toggleDayVisibility(dayId, studentId) {
+  const { data: current } = await supabase.from('routine_days').select('visible_to_student').eq('id', dayId).single();
+  const newValue = !(current && current.visible_to_student);
+  const { error } = await supabase.from('routine_days').update({ visible_to_student: newValue }).eq('id', dayId);
+  if (error) {
+    alert('No se pudo guardar: ' + error.message);
+    return;
+  }
   renderRoutine(studentId, true);
 }
 
@@ -1367,6 +1970,24 @@ async function deleteExercise(exerciseId, studentId) {
   await supabase.from('exercises').delete().eq('id', exerciseId);
   renderRoutine(studentId, true);
 }
+
+// ---------- Theme ----------
+const themeSwitch = document.getElementById('theme-switch');
+function applyTheme(theme) {
+  if (theme === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+  }
+}
+const savedTheme = localStorage.getItem('rutinas-theme') || 'dark';
+applyTheme(savedTheme);
+themeSwitch.addEventListener('click', () => {
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  const next = isLight ? 'dark' : 'light';
+  applyTheme(next);
+  localStorage.setItem('rutinas-theme', next);
+});
 
 // ---------- Init ----------
 boot();
