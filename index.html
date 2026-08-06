@@ -283,6 +283,16 @@
   }
   #main-content h1{font-size:38px;}
   .subtitle{color:var(--text-dim); font-size:14px; margin-bottom:32px;}
+  .routine-type-request{
+    display:inline-block;
+    background:var(--accent-soft);
+    color:var(--accent);
+    font-size:13px;
+    padding:6px 12px;
+    border-radius:8px;
+    margin-top:-18px;
+    margin-bottom:24px;
+  }
   .routine-header-row{
     display:flex;
     align-items:flex-start;
@@ -347,7 +357,22 @@
     justify-content:space-between;
     padding:16px 20px;
     border-bottom:1px solid var(--line);
+    gap:12px;
   }
+  .day-header-title{flex:1; min-width:0;}
+  .day-collapse-btn{
+    flex-shrink:0;
+    background:transparent;
+    color:var(--text-dim);
+    width:26px;
+    height:26px;
+    border-radius:6px;
+    font-size:13px;
+    line-height:1;
+  }
+  .day-collapse-btn:hover{background:var(--bg-card); color:var(--text);}
+  .day-card.day-collapsed .day-header{border-bottom:none;}
+  .day-card.day-collapsed .day-body{display:none;}
   .day-header .tag{
     display:inline-block;
     background:var(--accent-soft);
@@ -816,7 +841,7 @@
 
   @media print{
     body{background:#fff !important; color:#000 !important;}
-    #sidebar, button, .add-exercise-row, .superset-link-btn, .duplicate-btn, .export-pdf-btn, .contact-trainer-btn{
+    #sidebar, button, .add-exercise-row, .superset-link-btn, .duplicate-btn, .export-pdf-btn, .contact-trainer-btn, .routine-type-request{
       display:none !important;
     }
     #app-view{display:block !important;}
@@ -831,6 +856,7 @@
       page-break-inside:avoid;
     }
     .day-header{border-bottom:1px solid #ccc !important;}
+    .day-card.day-collapsed .day-body{display:block !important;}
     .exercise-item{border-bottom:1px solid #eee !important; break-inside:avoid;}
     .tag{background:#eee !important;}
     .ex-thumb-lg{border:1px solid #ccc !important;}
@@ -943,6 +969,7 @@ let currentProfile = null;
 let students = [];
 let selectedStudentId = null;
 let adminPanelOpen = false;
+let collapsedDays = new Set();
 
 function escapeAttr(str) {
   return String(str ?? '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
@@ -1245,6 +1272,7 @@ async function renderRoutine(studentId, editable) {
     <div>
       <h1>${student ? student.full_name : ''}</h1>
       <div class="subtitle">${editable ? 'Rutina del alumno' : 'Tu rutina'}</div>
+      ${editable && student && student.desired_routine_type ? `<div class="routine-type-request">💬 Pidió: <strong>${student.desired_routine_type}</strong></div>` : ''}
     </div>
     <div class="routine-header-actions">
       <button class="btn-secondary export-pdf-btn" id="export-pdf-btn">📄 Exportar PDF</button>
@@ -1257,9 +1285,11 @@ async function renderRoutine(studentId, editable) {
   } else {
     days.forEach((day, idx) => {
       const exercises = (day.exercises || []).sort((a,b) => a.exercise_order - b.exercise_order);
-      html += `<div class="day-card${editable && !day.visible_to_student ? ' day-hidden' : ''}">
+      const isCollapsed = collapsedDays.has(day.id);
+      html += `<div class="day-card${editable && !day.visible_to_student ? ' day-hidden' : ''}${isCollapsed ? ' day-collapsed' : ''}">
         <div class="day-header">
-          <div>
+          <button class="day-collapse-btn" data-action="toggle-day-collapse" data-day="${day.id}" aria-label="Colapsar día">${isCollapsed ? '▸' : '▾'}</button>
+          <div class="day-header-title">
             <div class="tag">Día ${idx + 1}</div>
             ${editable && !day.visible_to_student ? `<div class="tag tag-hidden">Oculto para el alumno</div>` : ''}
             <h3>${day.day_label}</h3>
@@ -1270,12 +1300,14 @@ async function renderRoutine(studentId, editable) {
             <button class="icon-btn danger" data-action="delete-day" data-day="${day.id}">Eliminar</button>
           </div>` : ''}
         </div>
-        <div class="exercise-list">
-            ${renderExerciseList(exercises, editable, day)}
+        <div class="day-body">
+          <div class="exercise-list">
+              ${renderExerciseList(exercises, editable, day)}
+          </div>
+          ${editable ? `<div class="add-exercise-row">
+            <button data-action="add-exercise" data-day="${day.id}">+ Agregar ejercicio</button>
+          </div>` : ''}
         </div>
-        ${editable ? `<div class="add-exercise-row">
-          <button data-action="add-exercise" data-day="${day.id}">+ Agregar ejercicio</button>
-        </div>` : ''}
       </div>`;
     });
   }
@@ -1305,6 +1337,22 @@ async function renderRoutine(studentId, editable) {
 
   mainContent.querySelectorAll('[data-action="toggle-superset"]').forEach(btn =>
     btn.addEventListener('click', () => toggleSuperset(btn.dataset.ex, studentId)));
+
+  mainContent.querySelectorAll('[data-action="toggle-day-collapse"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const dayId = btn.dataset.day;
+      const dayCard = btn.closest('.day-card');
+      if (collapsedDays.has(dayId)) {
+        collapsedDays.delete(dayId);
+        dayCard.classList.remove('day-collapsed');
+        btn.textContent = '▾';
+      } else {
+        collapsedDays.add(dayId);
+        dayCard.classList.add('day-collapsed');
+        btn.textContent = '▸';
+      }
+    });
+  });
 
   document.getElementById('export-pdf-btn').addEventListener('click', () => exportRoutinePDF(student));
 
@@ -1672,6 +1720,20 @@ async function renderProfileForm(studentId) {
         <label>Gimnasio al que vas <span class="optional-tag">(opcional)</span></label>
         <input type="text" id="pf-gym" placeholder="Opcional" value="${escapeAttr(profile.gym_name)}">
       </div>
+      <div class="field">
+        <label>Tipo de rutina que te gustaría <span class="optional-tag">(opcional)</span></label>
+        <input type="text" id="pf-routine-type" list="routine-type-suggestions" placeholder="Ej: Hipertrofia" value="${escapeAttr(profile.desired_routine_type)}">
+        <datalist id="routine-type-suggestions">
+          <option value="Hipertrofia">
+          <option value="Fuerza">
+          <option value="Recuperación muscular">
+          <option value="Resistencia">
+          <option value="Pérdida de grasa">
+          <option value="Movilidad">
+          <option value="Funcional">
+          <option value="Rehabilitación">
+        </datalist>
+      </div>
       <button class="btn-primary profile-save-btn" id="pf-save">Guardar</button>
       <div class="error-msg" id="pf-error"></div>
       <div class="saved-msg" id="pf-saved">Guardado ✓</div>
@@ -1690,6 +1752,7 @@ async function renderProfileForm(studentId) {
       weight_kg: document.getElementById('pf-weight').value ? parseFloat(document.getElementById('pf-weight').value) : null,
       phone: document.getElementById('pf-phone').value.trim() || null,
       gym_name: document.getElementById('pf-gym').value.trim() || null,
+      desired_routine_type: document.getElementById('pf-routine-type').value.trim() || null,
     };
 
     const { error: saveError } = await supabase.from('profiles').update(payload).eq('id', studentId);
