@@ -969,7 +969,10 @@ let currentProfile = null;
 let students = [];
 let selectedStudentId = null;
 let adminPanelOpen = false;
-let collapsedDays = new Set();
+let collapsedDays = new Set(JSON.parse(localStorage.getItem('rutinas-collapsed-days') || '[]'));
+function saveCollapsedDays() {
+  localStorage.setItem('rutinas-collapsed-days', JSON.stringify([...collapsedDays]));
+}
 
 function escapeAttr(str) {
   return String(str ?? '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
@@ -1351,6 +1354,7 @@ async function renderRoutine(studentId, editable) {
         dayCard.classList.add('day-collapsed');
         btn.textContent = '▸';
       }
+      saveCollapsedDays();
     });
   });
 
