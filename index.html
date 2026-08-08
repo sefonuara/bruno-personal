@@ -1411,6 +1411,15 @@ function formatDateEs(date) {
   return date.toLocaleDateString('es-AR');
 }
 
+function parseDateOnly(dateStr) {
+  // "YYYY-MM-DD" from Postgres date columns has no time/timezone info.
+  // new Date(str) parses it as UTC midnight, which toLocaleDateString then
+  // shifts back a day in timezones behind UTC (e.g. Argentina). Building
+  // the Date from local y/m/d components avoids that shift entirely.
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
 function computePaymentStatus(profile, payments) {
   const totalMonths = (payments || []).reduce((sum, p) => sum + Number(p.period_months || 1), 0);
   const start = new Date(profile.created_at);
@@ -1531,13 +1540,13 @@ function renderPersonalInfoPanel(s) {
   const sexLabels = { femenino: 'Femenino', masculino: 'Masculino', otro: 'Otro' };
   let age = null;
   if (s.birth_date) {
-    const b = new Date(s.birth_date);
+    const b = parseDateOnly(s.birth_date);
     const today = new Date();
     age = today.getFullYear() - b.getFullYear() - ((today.getMonth() < b.getMonth() || (today.getMonth() === b.getMonth() && today.getDate() < b.getDate())) ? 1 : 0);
   }
   const rows = [
     ['Sexo', s.sex ? (sexLabels[s.sex] || s.sex) : '—'],
-    ['Fecha de nacimiento', s.birth_date ? `${formatDateEs(new Date(s.birth_date))}${age !== null ? ` (${age} años)` : ''}` : '—'],
+    ['Fecha de nacimiento', s.birth_date ? `${formatDateEs(parseDateOnly(s.birth_date))}${age !== null ? ` (${age} años)` : ''}` : '—'],
     ['Altura', s.height_cm ? `${s.height_cm} cm` : '—'],
     ['Peso', s.weight_kg ? `${s.weight_kg} kg` : '—'],
     ['Gimnasio', s.gym_name || '—'],
@@ -1589,7 +1598,7 @@ async function openPaymentsModal(studentId, studentName) {
           ${!payments || !payments.length ? '<div class="empty-state">Todavía no hay pagos registrados.</div>' : payments.map(p => `
             <div class="payment-history-row">
               <div>
-                <strong>${formatDateEs(new Date(p.payment_date))}</strong>
+                <strong>${formatDateEs(parseDateOnly(p.payment_date))}</strong>
                 <span class="text-dim"> · ${p.period_months} ${Number(p.period_months) === 1 ? 'mes' : 'meses'}${p.amount != null ? ' · $' + p.amount : ''}</span>
                 ${p.notes ? `<div class="text-dim">${p.notes}</div>` : ''}
               </div>
