@@ -60,8 +60,6 @@
     width:100%;
   }
   input:focus{outline:none; border-color:var(--accent-line);}
-  input[type="date"]{text-align:left;}
-  input[type="date"]::-webkit-date-and-time-value{text-align:left;}
 
   /* ---------- Login ---------- */
   #login-view{
@@ -401,6 +399,8 @@
     font-size:12px;
     border-radius:6px;
   }
+  .icon-btn:disabled{opacity:0.3; cursor:default;}
+  .icon-btn:disabled:hover{background:transparent; color:var(--text-dim);}
   .icon-btn:hover{background:var(--bg-card); color:var(--text);}
   .icon-btn.danger:hover{color:var(--accent);}
 
@@ -786,6 +786,17 @@
   .payment-history-row:last-child{border-bottom:none;}
   .text-dim{color:var(--text-dim); font-size:12px;}
 
+  .personal-info-row td{padding:0 !important; border-bottom:1px solid var(--line) !important;}
+  .personal-info-row.hidden{display:none;}
+  .personal-info-panel{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(150px, 1fr));
+    gap:14px;
+    padding:16px 20px;
+    background:var(--bg-card);
+  }
+  .personal-info-item div:last-child{font-size:14px; font-weight:600; margin-top:2px;}
+
   /* ---------- Modal ---------- */
   .modal-backdrop{
     position:fixed; inset:0;
@@ -904,7 +915,7 @@
     <form id="signup-form" class="hidden">
       <div class="sub">Creá tu cuenta de alumno. Tu profe va a ver tu nombre y armarte la rutina.</div>
       <div class="field">
-        <label>Nombre</label>
+        <label>Nombre y apellido</label>
         <input type="text" id="signup-name" required autocomplete="name">
       </div>
       <div class="field">
@@ -1300,7 +1311,10 @@ async function renderRoutine(studentId, editable) {
             <h3>${day.day_label}</h3>
           </div>
           ${editable ? `<div class="day-actions">
+            <button class="icon-btn" data-action="move-day-up" data-day="${day.id}" ${idx === 0 ? 'disabled' : ''} aria-label="Subir día">▲</button>
+            <button class="icon-btn" data-action="move-day-down" data-day="${day.id}" ${idx === days.length - 1 ? 'disabled' : ''} aria-label="Bajar día">▼</button>
             <button class="icon-btn" data-action="toggle-visible" data-day="${day.id}">${day.visible_to_student ? '🚫 Ocultar' : '👁 Mostrar'}</button>
+            <button class="icon-btn" data-action="duplicate-day" data-day="${day.id}">📋 Duplicar día</button>
             <button class="icon-btn" data-action="rename-day" data-day="${day.id}">Renombrar</button>
             <button class="icon-btn danger" data-action="delete-day" data-day="${day.id}">Eliminar</button>
           </div>` : ''}
@@ -1365,8 +1379,14 @@ async function renderRoutine(studentId, editable) {
   if (editable) {
     document.getElementById('duplicate-routine-btn').addEventListener('click', () => openDuplicateModal(studentId));
     document.getElementById('add-day-btn').addEventListener('click', () => openDayModal(studentId));
+    mainContent.querySelectorAll('[data-action="move-day-up"]').forEach(b =>
+      b.addEventListener('click', () => moveDay(studentId, days, b.dataset.day, -1)));
+    mainContent.querySelectorAll('[data-action="move-day-down"]').forEach(b =>
+      b.addEventListener('click', () => moveDay(studentId, days, b.dataset.day, 1)));
     mainContent.querySelectorAll('[data-action="toggle-visible"]').forEach(b =>
       b.addEventListener('click', () => toggleDayVisibility(b.dataset.day, studentId)));
+    mainContent.querySelectorAll('[data-action="duplicate-day"]').forEach(b =>
+      b.addEventListener('click', () => openDuplicateModal(studentId, b.dataset.day)));
     mainContent.querySelectorAll('[data-action="rename-day"]').forEach(b =>
       b.addEventListener('click', () => openDayModal(studentId, b.dataset.day)));
     mainContent.querySelectorAll('[data-action="delete-day"]').forEach(b =>
@@ -1465,17 +1485,21 @@ async function showAdminPanel() {
   } else {
     html += `<div class="admin-table-wrap"><table class="admin-table">
       <thead><tr>
-        <th>Alumno</th><th>Activo</th><th>Pago</th><th></th><th>Teléfono</th><th>Notas privadas</th>
+        <th></th><th>Alumno</th><th>Activo</th><th>Pago</th><th></th><th>Teléfono</th><th>Notas privadas</th>
       </tr></thead>
       <tbody>
         ${all.map(s => `
           <tr class="${s.is_active ? '' : 'inactive-row'}">
+            <td><button class="icon-btn" data-action="toggle-personal-info" data-id="${s.id}">▾</button></td>
             <td class="ex-name">${s.full_name}</td>
             <td><input type="checkbox" class="admin-check" data-field="is_active" data-id="${s.id}" ${s.is_active ? 'checked' : ''}></td>
             <td>${paymentBadge(statusByStudent[s.id])}</td>
             <td><button class="icon-btn" data-action="manage-payments" data-id="${s.id}" data-name="${escapeAttr(s.full_name)}">Gestionar pagos</button></td>
             <td><input type="text" class="admin-input" data-field="phone" data-id="${s.id}" value="${escapeAttr(s.phone)}" placeholder="Opcional"></td>
             <td><input type="text" class="admin-input" data-field="admin_notes" data-id="${s.id}" value="${escapeAttr(s.admin_notes)}" placeholder="Solo vos la ves"></td>
+          </tr>
+          <tr class="personal-info-row hidden" data-for="${s.id}">
+            <td colspan="7">${renderPersonalInfoPanel(s)}</td>
           </tr>
         `).join('')}
       </tbody>
@@ -1494,6 +1518,39 @@ async function showAdminPanel() {
   mainContent.querySelectorAll('[data-action="manage-payments"]').forEach(btn => {
     btn.addEventListener('click', () => openPaymentsModal(btn.dataset.id, btn.dataset.name));
   });
+  mainContent.querySelectorAll('[data-action="toggle-personal-info"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const row = mainContent.querySelector(`.personal-info-row[data-for="${btn.dataset.id}"]`);
+      const isHidden = row.classList.toggle('hidden');
+      btn.textContent = isHidden ? '▾' : '▴';
+    });
+  });
+}
+
+function renderPersonalInfoPanel(s) {
+  const sexLabels = { femenino: 'Femenino', masculino: 'Masculino', otro: 'Otro' };
+  let age = null;
+  if (s.birth_date) {
+    const b = new Date(s.birth_date);
+    const today = new Date();
+    age = today.getFullYear() - b.getFullYear() - ((today.getMonth() < b.getMonth() || (today.getMonth() === b.getMonth() && today.getDate() < b.getDate())) ? 1 : 0);
+  }
+  const rows = [
+    ['Sexo', s.sex ? (sexLabels[s.sex] || s.sex) : '—'],
+    ['Fecha de nacimiento', s.birth_date ? `${formatDateEs(new Date(s.birth_date))}${age !== null ? ` (${age} años)` : ''}` : '—'],
+    ['Altura', s.height_cm ? `${s.height_cm} cm` : '—'],
+    ['Peso', s.weight_kg ? `${s.weight_kg} kg` : '—'],
+    ['Gimnasio', s.gym_name || '—'],
+    ['Tipo de rutina pedido', s.desired_routine_type || '—'],
+  ];
+  return `<div class="personal-info-panel">
+    ${rows.map(([label, value]) => `
+      <div class="personal-info-item">
+        <div class="ex-meta-label">${label}</div>
+        <div>${value}</div>
+      </div>
+    `).join('')}
+  </div>`;
 }
 
 async function openPaymentsModal(studentId, studentName) {
@@ -1819,16 +1876,18 @@ async function toggleSuperset(exId, studentId) {
   renderRoutine(studentId, true);
 }
 
-// ---------- Duplicate routine ----------
-function openDuplicateModal(sourceStudentId) {
+// ---------- Duplicate routine / day ----------
+function openDuplicateModal(sourceStudentId, dayId = null) {
   const sourceStudent = students.find(s => s.id === sourceStudentId);
   const others = students.filter(s => s.id !== sourceStudentId);
 
   modalRoot.innerHTML = `
     <div class="modal-backdrop">
       <div class="modal">
-        <h3>Duplicar rutina</h3>
-        <div class="sub" style="margin-bottom:16px;">Copiá la rutina de <strong>${sourceStudent ? sourceStudent.full_name : 'este alumno'}</strong> a otro alumno. Se agrega como días nuevos, no borra lo que ya tenga.</div>
+        <h3>${dayId ? 'Duplicar día' : 'Duplicar rutina'}</h3>
+        <div class="sub" style="margin-bottom:16px;">${dayId
+          ? `Copiá este día a otro alumno.`
+          : `Copiá la rutina de <strong>${sourceStudent ? sourceStudent.full_name : 'este alumno'}</strong> a otro alumno.`} Se agrega como día${dayId ? '' : 's'} nuevo${dayId ? '' : 's'}, no borra lo que ya tenga.</div>
         ${others.length ? `<div class="duplicate-target-list">
           ${others.map(s => `
             <label class="duplicate-target-item">
@@ -1857,7 +1916,11 @@ function openDuplicateModal(sourceStudentId) {
     errBox.style.display = 'none';
 
     try {
-      await duplicateRoutine(sourceStudentId, targets);
+      if (dayId) {
+        await duplicateDay(dayId, targets);
+      } else {
+        await duplicateRoutine(sourceStudentId, targets);
+      }
       closeModal();
     } catch (err) {
       errBox.textContent = 'No se pudo duplicar: ' + err.message;
@@ -1866,6 +1929,50 @@ function openDuplicateModal(sourceStudentId) {
       saveBtn.textContent = 'Duplicar';
     }
   });
+}
+
+async function copyDayToStudent(day, targetId) {
+  const { count } = await supabase
+    .from('routine_days')
+    .select('*', { count: 'exact', head: true })
+    .eq('student_id', targetId);
+  const orderOffset = count || 0;
+
+  const { data: newDay, error: dayError } = await supabase
+    .from('routine_days')
+    .insert({ student_id: targetId, day_label: day.day_label, day_order: orderOffset })
+    .select()
+    .single();
+  if (dayError) throw dayError;
+
+  const exercises = (day.exercises || []).sort((a, b) => a.exercise_order - b.exercise_order);
+  for (const ex of exercises) {
+    const { error: exError } = await supabase.from('exercises').insert({
+      routine_day_id: newDay.id,
+      name: ex.name,
+      sets: ex.sets,
+      reps: ex.reps,
+      weight: null,
+      notes: null,
+      gif_url: ex.gif_url,
+      groups_with_next: ex.groups_with_next,
+      exercise_order: ex.exercise_order,
+    });
+    if (exError) throw exError;
+  }
+}
+
+async function duplicateDay(dayId, targetStudentIds) {
+  const { data: day, error: fetchError } = await supabase
+    .from('routine_days')
+    .select('*, exercises(*)')
+    .eq('id', dayId)
+    .single();
+  if (fetchError) throw fetchError;
+
+  for (const targetId of targetStudentIds) {
+    await copyDayToStudent(day, targetId);
+  }
 }
 
 async function duplicateRoutine(sourceStudentId, targetStudentIds) {
@@ -1878,35 +1985,8 @@ async function duplicateRoutine(sourceStudentId, targetStudentIds) {
   if (!sourceDays || !sourceDays.length) throw new Error('Este alumno no tiene días de rutina para copiar.');
 
   for (const targetId of targetStudentIds) {
-    const { count } = await supabase
-      .from('routine_days')
-      .select('*', { count: 'exact', head: true })
-      .eq('student_id', targetId);
-    let orderOffset = count || 0;
-
     for (const day of sourceDays) {
-      const { data: newDay, error: dayError } = await supabase
-        .from('routine_days')
-        .insert({ student_id: targetId, day_label: day.day_label, day_order: orderOffset })
-        .select()
-        .single();
-      if (dayError) throw dayError;
-      orderOffset++;
-
-      const exercises = (day.exercises || []).sort((a, b) => a.exercise_order - b.exercise_order);
-      for (const ex of exercises) {
-        const { error: exError } = await supabase.from('exercises').insert({
-          routine_day_id: newDay.id,
-          name: ex.name,
-          sets: ex.sets,
-          reps: ex.reps,
-          notes: null,
-          gif_url: ex.gif_url,
-          groups_with_next: ex.groups_with_next,
-          exercise_order: ex.exercise_order,
-        });
-        if (exError) throw exError;
-      }
+      await copyDayToStudent(day, targetId);
     }
   }
 }
@@ -1954,6 +2034,24 @@ async function toggleDayVisibility(dayId, studentId) {
   const { error } = await supabase.from('routine_days').update({ visible_to_student: newValue }).eq('id', dayId);
   if (error) {
     alert('No se pudo guardar: ' + error.message);
+    return;
+  }
+  renderRoutine(studentId, true);
+}
+
+async function moveDay(studentId, days, dayId, direction) {
+  const sorted = [...days].sort((a, b) => a.day_order - b.day_order);
+  const idx = sorted.findIndex(d => d.id === dayId);
+  const swapIdx = idx + direction;
+  if (idx === -1 || swapIdx < 0 || swapIdx >= sorted.length) return;
+
+  const a = sorted[idx], b = sorted[swapIdx];
+  const [{ error: e1 }, { error: e2 }] = await Promise.all([
+    supabase.from('routine_days').update({ day_order: b.day_order }).eq('id', a.id),
+    supabase.from('routine_days').update({ day_order: a.day_order }).eq('id', b.id),
+  ]);
+  if (e1 || e2) {
+    alert('No se pudo mover el día: ' + (e1 || e2).message);
     return;
   }
   renderRoutine(studentId, true);
