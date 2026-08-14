@@ -60,6 +60,18 @@
     width:100%;
   }
   input:focus{outline:none; border-color:var(--accent-line);}
+  textarea{
+    font-family:'Inter', sans-serif;
+    background:var(--bg);
+    border:1px solid var(--line);
+    color:var(--text);
+    border-radius:8px;
+    padding:10px 12px;
+    font-size:14px;
+    width:100%;
+    resize:vertical;
+  }
+  textarea:focus{outline:none; border-color:var(--accent-line);}
 
   /* ---------- Login ---------- */
   #login-view{
@@ -283,6 +295,39 @@
   }
   #main-content h1{font-size:38px;}
   .subtitle{color:var(--text-dim); font-size:14px; margin-bottom:32px;}
+  .routine-start-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-top:8px;
+    margin-bottom:14px;
+  }
+  .routine-start-row label{
+    font-size:12px;
+    color:var(--text-dim);
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+    white-space:nowrap;
+  }
+  .routine-start-row input{
+    width:auto;
+    padding:6px 10px;
+    font-size:13px;
+  }
+  .routine-start-display{
+    color:var(--text-dim);
+    font-size:13px;
+    margin-top:-14px;
+    margin-bottom:20px;
+  }
+
+  .routine-alerts{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    margin-top:4px;
+    margin-bottom:24px;
+  }
   .routine-type-request{
     display:inline-block;
     background:var(--accent-soft);
@@ -290,8 +335,14 @@
     font-size:13px;
     padding:6px 12px;
     border-radius:8px;
-    margin-top:-18px;
-    margin-bottom:24px;
+  }
+  .injury-warning{
+    display:inline-block;
+    background:rgba(240,180,41,0.14);
+    color:#F0B429;
+    font-size:13px;
+    padding:6px 12px;
+    border-radius:8px;
   }
   .routine-header-row{
     display:flex;
@@ -615,7 +666,7 @@
     border-color:var(--accent-line);
     color:var(--text);
   }
-  .row-actions{display:flex; gap:4px; justify-content:flex-end;}
+  .row-actions{display:flex; gap:4px; justify-content:flex-end; flex-wrap:wrap;}
 
   .add-exercise-row{
     padding:10px 20px;
@@ -854,14 +905,21 @@
 
   @media print{
     body{background:#fff !important; color:#000 !important;}
-    #sidebar, button, .add-exercise-row, .superset-link-btn, .duplicate-btn, .export-pdf-btn, .contact-trainer-btn, .routine-type-request{
+    #sidebar, button, .add-exercise-row, .superset-link-btn, .duplicate-btn, .export-pdf-btn, .contact-trainer-btn, .routine-alerts{
       display:none !important;
     }
     #app-view{display:block !important;}
     #main-content{padding:0 !important; max-width:100% !important;}
     .routine-header-row{display:block !important;}
     h1, h3, .ex-title{color:#000 !important;}
-    .subtitle, .ex-meta-label, .tag{color:#555 !important;}
+    .subtitle, .ex-meta-label, .tag, .routine-start-display{color:#555 !important;}
+    .routine-start-row input{
+      border:none !important;
+      background:transparent !important;
+      color:#000 !important;
+      padding:0 !important;
+      width:auto !important;
+    }
     .day-card{
       background:#fff !important;
       border:1px solid #ccc !important;
@@ -1125,7 +1183,7 @@ async function boot() {
 
   const { data: profile, error } = await supabase
     .from('profiles')
-    .select('id, full_name, is_trainer, is_active')
+    .select('id, full_name, is_trainer, is_active, routine_start_date')
     .eq('id', session.user.id)
     .single();
 
@@ -1215,7 +1273,7 @@ function selectStudent(id) {
 }
 
 // ---------- Routine rendering ----------
-function renderExerciseItem(ex, editable, day) {
+function renderExerciseItem(ex, editable, day, idx, total) {
   return `
     <div class="exercise-item">
       ${ex.gif_url
@@ -1224,6 +1282,8 @@ function renderExerciseItem(ex, editable, day) {
       <div class="ex-content">
         <div class="ex-title">${ex.name}</div>
         ${editable ? `<div class="ex-actions row-actions">
+          <button class="icon-btn" data-action="move-exercise-up" data-ex="${ex.id}" data-day="${day.id}" ${idx === 0 ? 'disabled' : ''} aria-label="Subir ejercicio">▲</button>
+          <button class="icon-btn" data-action="move-exercise-down" data-ex="${ex.id}" data-day="${day.id}" ${idx === total - 1 ? 'disabled' : ''} aria-label="Bajar ejercicio">▼</button>
           <button class="icon-btn" data-action="edit-exercise" data-ex="${ex.id}" data-day="${day.id}">Editar</button>
           <button class="icon-btn danger" data-action="delete-exercise" data-ex="${ex.id}">Borrar</button>
         </div>` : ''}
@@ -1247,6 +1307,7 @@ function renderExerciseItem(ex, editable, day) {
 
 function renderExerciseList(exercises, editable, day) {
   let out = '';
+  const total = exercises.length;
   for (let i = 0; i < exercises.length; i++) {
     const ex = exercises[i];
     if (ex._pairedAsSecond) continue;
@@ -1260,11 +1321,11 @@ function renderExerciseList(exercises, editable, day) {
             Biserie
             ${editable ? `<button class="superset-unlink-btn" data-action="toggle-superset" data-ex="${ex.id}" data-day="${day.id}">Separar</button>` : ''}
           </div>
-          ${renderExerciseItem(ex, editable, day)}
-          ${renderExerciseItem(next, editable, day)}
+          ${renderExerciseItem(ex, editable, day, i, total)}
+          ${renderExerciseItem(next, editable, day, i + 1, total)}
         </div>`;
     } else {
-      out += renderExerciseItem(ex, editable, day);
+      out += renderExerciseItem(ex, editable, day, i, total);
       if (editable && next) {
         out += `<button class="superset-link-btn" data-action="toggle-superset" data-ex="${ex.id}" data-day="${day.id}">+ Unir en biserie con el siguiente</button>`;
       }
@@ -1288,7 +1349,14 @@ async function renderRoutine(studentId, editable) {
     <div>
       <h1>${student ? student.full_name : ''}</h1>
       <div class="subtitle">${editable ? 'Rutina del alumno' : 'Tu rutina'}</div>
-      ${editable && student && student.desired_routine_type ? `<div class="routine-type-request">💬 Pidió: <strong>${student.desired_routine_type}</strong></div>` : ''}
+      ${editable ? `<div class="routine-start-row">
+        <label for="routine-start-input">Inicio de esta rutina</label>
+        <input type="date" id="routine-start-input" value="${student && student.routine_start_date ? student.routine_start_date : ''}">
+      </div>` : (student && student.routine_start_date ? `<div class="routine-start-display">Rutina vigente desde el ${formatDateEs(parseDateOnly(student.routine_start_date))}</div>` : '')}
+      <div class="routine-alerts">
+        ${editable && student && student.desired_routine_type ? `<div class="routine-type-request">💬 Pidió: <strong>${student.desired_routine_type}</strong></div>` : ''}
+        ${editable && student && student.injuries ? `<div class="injury-warning">⚠️ Lesiones: <strong>${student.injuries}</strong></div>` : ''}
+      </div>
     </div>
     <div class="routine-header-actions">
       <button class="btn-secondary export-pdf-btn" id="export-pdf-btn">📄 Exportar PDF</button>
@@ -1377,12 +1445,20 @@ async function renderRoutine(studentId, editable) {
   document.getElementById('export-pdf-btn').addEventListener('click', () => exportRoutinePDF(student));
 
   if (editable) {
+    document.getElementById('routine-start-input').addEventListener('change', async (e) => {
+      const { error } = await supabase.from('profiles').update({ routine_start_date: e.target.value || null }).eq('id', studentId);
+      if (error) alert('No se pudo guardar: ' + error.message);
+    });
     document.getElementById('duplicate-routine-btn').addEventListener('click', () => openDuplicateModal(studentId));
     document.getElementById('add-day-btn').addEventListener('click', () => openDayModal(studentId));
     mainContent.querySelectorAll('[data-action="move-day-up"]').forEach(b =>
       b.addEventListener('click', () => moveDay(studentId, days, b.dataset.day, -1)));
     mainContent.querySelectorAll('[data-action="move-day-down"]').forEach(b =>
       b.addEventListener('click', () => moveDay(studentId, days, b.dataset.day, 1)));
+    mainContent.querySelectorAll('[data-action="move-exercise-up"]').forEach(b =>
+      b.addEventListener('click', () => moveExercise(studentId, b.dataset.day, b.dataset.ex, -1)));
+    mainContent.querySelectorAll('[data-action="move-exercise-down"]').forEach(b =>
+      b.addEventListener('click', () => moveExercise(studentId, b.dataset.day, b.dataset.ex, 1)));
     mainContent.querySelectorAll('[data-action="toggle-visible"]').forEach(b =>
       b.addEventListener('click', () => toggleDayVisibility(b.dataset.day, studentId)));
     mainContent.querySelectorAll('[data-action="duplicate-day"]').forEach(b =>
@@ -1551,6 +1627,7 @@ function renderPersonalInfoPanel(s) {
     ['Peso', s.weight_kg ? `${s.weight_kg} kg` : '—'],
     ['Gimnasio', s.gym_name || '—'],
     ['Tipo de rutina pedido', s.desired_routine_type || '—'],
+    ['Lesiones', s.injuries || '—'],
   ];
   return `<div class="personal-info-panel">
     ${rows.map(([label, value]) => `
@@ -1806,6 +1883,10 @@ async function renderProfileForm(studentId) {
           <option value="Rehabilitación">
         </datalist>
       </div>
+      <div class="field">
+        <label>Lesiones actuales o pasadas <span class="optional-tag">(opcional)</span></label>
+        <textarea id="pf-injuries" rows="3" placeholder="Ej: dolor de rodilla derecha, hernia lumbar, cirugía de hombro en 2023...">${escapeAttr(profile.injuries)}</textarea>
+      </div>
       <button class="btn-primary profile-save-btn" id="pf-save">Guardar</button>
       <div class="error-msg" id="pf-error"></div>
       <div class="saved-msg" id="pf-saved">Guardado ✓</div>
@@ -1825,6 +1906,7 @@ async function renderProfileForm(studentId) {
       phone: document.getElementById('pf-phone').value.trim() || null,
       gym_name: document.getElementById('pf-gym').value.trim() || null,
       desired_routine_type: document.getElementById('pf-routine-type').value.trim() || null,
+      injuries: document.getElementById('pf-injuries').value.trim() || null,
     };
 
     const { error: saveError } = await supabase.from('profiles').update(payload).eq('id', studentId);
@@ -2061,6 +2143,33 @@ async function moveDay(studentId, days, dayId, direction) {
   ]);
   if (e1 || e2) {
     alert('No se pudo mover el día: ' + (e1 || e2).message);
+    return;
+  }
+  renderRoutine(studentId, true);
+}
+
+async function moveExercise(studentId, dayId, exId, direction) {
+  const { data: exercises, error: fetchError } = await supabase
+    .from('exercises')
+    .select('id, exercise_order')
+    .eq('routine_day_id', dayId)
+    .order('exercise_order');
+  if (fetchError) {
+    alert('No se pudo mover el ejercicio: ' + fetchError.message);
+    return;
+  }
+
+  const idx = exercises.findIndex(e => e.id === exId);
+  const swapIdx = idx + direction;
+  if (idx === -1 || swapIdx < 0 || swapIdx >= exercises.length) return;
+
+  const a = exercises[idx], b = exercises[swapIdx];
+  const [{ error: e1 }, { error: e2 }] = await Promise.all([
+    supabase.from('exercises').update({ exercise_order: b.exercise_order }).eq('id', a.id),
+    supabase.from('exercises').update({ exercise_order: a.exercise_order }).eq('id', b.id),
+  ]);
+  if (e1 || e2) {
+    alert('No se pudo mover el ejercicio: ' + (e1 || e2).message);
     return;
   }
   renderRoutine(studentId, true);
