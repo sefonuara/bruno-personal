@@ -803,7 +803,7 @@
   .pay-badge.pay-adelantado{background:rgba(122,167,255,0.14); color:#7AA7FF;}
   .pay-sub{font-size:11px; color:var(--text-dim); margin-top:3px;}
   .payment-status-summary{margin-bottom:20px;}
-  .payment-form-grid{
+  .payment-form-grid, .progress-form-grid{
     display:grid;
     grid-template-columns:1fr 1fr 1fr;
     grid-auto-rows:auto;
@@ -812,11 +812,27 @@
     margin-bottom:10px;
     align-items:end;
   }
-  .payment-form-grid label{
+  .payment-form-grid label, .progress-form-grid label{
     font-size:12px;
     color:var(--text-dim);
     text-transform:uppercase;
     letter-spacing:0.04em;
+  }
+  .progress-btn{
+    background:transparent;
+    color:var(--text-dim);
+    padding:0 0 0 4px;
+    font-size:11px;
+    vertical-align:middle;
+  }
+  .progress-btn:hover{color:var(--accent);}
+  .progress-chart-wrap{
+    background:var(--bg-card);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:16px;
+    margin-bottom:20px;
+    height:220px;
   }
   .payment-history{
     max-height:220px;
@@ -941,6 +957,7 @@
     .superset-badge{color:#000 !important;}
   }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 </head>
 <body>
 
@@ -1293,7 +1310,7 @@ function renderExerciseItem(ex, editable, day, idx, total) {
             <div class="ex-reps">${ex.reps ?? '—'}</div>
           </div>
           <div class="ex-meta-block">
-            <div class="ex-meta-label">Peso</div>
+            <div class="ex-meta-label">Peso <button class="progress-btn" data-action="open-progress" data-student="${day.student_id}" data-ex-name="${escapeAttr(ex.name)}" aria-label="Ver progreso">📈</button></div>
             <input type="text" class="weight-input" data-ex="${ex.id}" data-day="${day.id}" value="${escapeAttr(ex.weight)}" placeholder="Ej: 10kg">
           </div>
         </div>
@@ -1424,6 +1441,9 @@ async function renderRoutine(studentId, editable) {
 
   mainContent.querySelectorAll('[data-action="toggle-superset"]').forEach(btn =>
     btn.addEventListener('click', () => toggleSuperset(btn.dataset.ex, studentId)));
+
+  mainContent.querySelectorAll('[data-action="open-progress"]').forEach(btn =>
+    btn.addEventListener('click', () => openProgressModal(btn.dataset.student, btn.dataset.exName)));
 
   mainContent.querySelectorAll('[data-action="toggle-day-collapse"]').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -1637,6 +1657,129 @@ function renderPersonalInfoPanel(s) {
       </div>
     `).join('')}
   </div>`;
+}
+
+// ---------- Exercise weight progress ----------
+let progressChartInstance = null;
+
+async function openProgressModal(studentId, exerciseName) {
+  modalRoot.innerHTML = `<div class="modal-backdrop"><div class="modal modal-wide"><div class="empty-state">Cargando...</div></div></div>`;
+
+  const { data: logs, error } = await supabase
+    .from('weight_logs')
+    .select('*')
+    .eq('student_id', studentId)
+    .eq('exercise_name', exerciseName)
+    .order('log_date', { ascending: true });
+
+  if (error) {
+    modalRoot.innerHTML = `<div class="modal-backdrop"><div class="modal modal-wide"><div class="empty-state">No se pudo cargar: ${error.message}</div></div></div>`;
+    return;
+  }
+
+  modalRoot.innerHTML = `
+    <div class="modal-backdrop">
+      <div class="modal modal-wide">
+        <h3>Progreso — ${exerciseName}</h3>
+        <div class="sub" style="margin-bottom:16px;">Historial de peso a lo largo del tiempo, se guarda aparte de la rutina (no se pierde si cambiás los días).</div>
+
+        ${logs.length >= 2 ? `<div class="progress-chart-wrap"><canvas id="progress-chart"></canvas></div>` : ''}
+
+        <div class="field"><label>Nuevo registro</label></div>
+        <div class="progress-form-grid">
+          <label>Fecha</label>
+          <label>Peso (kg)</label>
+          <label>Reps <span class="optional-tag">(opcional)</span></label>
+          <input type="date" id="pl-date" value="${new Date().toISOString().slice(0,10)}">
+          <input type="number" id="pl-weight" min="0" step="0.5">
+          <input type="text" id="pl-reps" placeholder="Ej: 8-12">
+        </div>
+        <div class="field"><input type="text" id="pl-notes" placeholder="Nota (opcional)"></div>
+        <button class="btn-primary" id="pl-save-btn" style="margin-bottom:16px;">Registrar</button>
+        <div class="error-msg" id="pl-error"></div>
+
+        <div class="field"><label>Historial</label></div>
+        <div class="payment-history">
+          ${!logs.length ? '<div class="empty-state">Todavía no hay registros para este ejercicio.</div>' : [...logs].reverse().map(l => `
+            <div class="payment-history-row">
+              <div>
+                <strong>${formatDateEs(parseDateOnly(l.log_date))}</strong>
+                <span class="text-dim"> · ${l.weight_kg}kg${l.reps ? ' · ' + l.reps : ''}</span>
+                ${l.notes ? `<div class="text-dim">${l.notes}</div>` : ''}
+              </div>
+              <button class="icon-btn danger" data-action="delete-weight-log" data-log="${l.id}">Borrar</button>
+            </div>
+          `).join('')}
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn-secondary" id="modal-cancel">Cerrar</button>
+        </div>
+      </div>
+    </div>`;
+
+  document.getElementById('modal-cancel').addEventListener('click', closeModal);
+
+  if (logs.length >= 2 && window.Chart) {
+    const ctx = document.getElementById('progress-chart');
+    progressChartInstance = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: logs.map(l => formatDateEs(parseDateOnly(l.log_date))),
+        datasets: [{
+          label: 'Peso (kg)',
+          data: logs.map(l => l.weight_kg),
+          borderColor: '#FF4429',
+          backgroundColor: 'rgba(255,68,41,0.15)',
+          tension: 0.25,
+          fill: true,
+          pointRadius: 4,
+        }],
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: false, ticks: { color: '#9497A0' }, grid: { color: 'rgba(255,255,255,0.06)' } },
+          x: { ticks: { color: '#9497A0' }, grid: { display: false } },
+        },
+      },
+    });
+  }
+
+  document.getElementById('pl-save-btn').addEventListener('click', async () => {
+    const errBox = document.getElementById('pl-error');
+    errBox.style.display = 'none';
+    const weightVal = document.getElementById('pl-weight').value;
+    if (!weightVal) {
+      errBox.textContent = 'Ingresá el peso.';
+      errBox.style.display = 'block';
+      return;
+    }
+    const payload = {
+      student_id: studentId,
+      exercise_name: exerciseName,
+      log_date: document.getElementById('pl-date').value || new Date().toISOString().slice(0,10),
+      weight_kg: parseFloat(weightVal),
+      reps: document.getElementById('pl-reps').value.trim() || null,
+      notes: document.getElementById('pl-notes').value.trim() || null,
+    };
+    const { error: saveError } = await supabase.from('weight_logs').insert(payload);
+    if (saveError) {
+      errBox.textContent = 'No se pudo guardar: ' + saveError.message;
+      errBox.style.display = 'block';
+      return;
+    }
+    openProgressModal(studentId, exerciseName);
+  });
+
+  modalRoot.querySelectorAll('[data-action="delete-weight-log"]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!confirm('¿Borrar este registro?')) return;
+      await supabase.from('weight_logs').delete().eq('id', btn.dataset.log);
+      openProgressModal(studentId, exerciseName);
+    });
+  });
 }
 
 async function openPaymentsModal(studentId, studentName) {
