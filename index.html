@@ -575,6 +575,18 @@
     }
     .ex-actions{align-self:end;}
     .row-actions{justify-content:flex-end;}
+
+    .day-card{position:relative;}
+    .day-move-controls{
+      position:absolute;
+      top:14px;
+      right:16px;
+      display:flex;
+      gap:4px;
+      background:var(--bg-elevated);
+    }
+    .day-header{flex-wrap:wrap; padding-right:76px;}
+    .day-actions{width:100%; justify-content:flex-end;}
   }
 
   /* GIF picker */
@@ -922,21 +934,16 @@
     #app-view{flex-direction:column;}
     #sidebar{
       width:100%; border-right:none; border-bottom:1px solid var(--line);
-      position:static; height:auto; overflow-y:visible;
+      position:relative; height:auto; overflow-y:visible;
     }
     #main-content{padding:24px;}
     .gif-grid{grid-template-columns:repeat(2, 1fr);}
 
     .theme-switch-row{
-      position:fixed;
-      top:14px;
-      right:14px;
+      position:absolute;
+      top:26px;
+      right:16px;
       margin-top:0;
-      padding:5px 10px;
-      background:var(--bg-elevated);
-      border:1px solid var(--line);
-      border-radius:999px;
-      z-index:40;
     }
   }
 
@@ -1417,9 +1424,11 @@ async function renderRoutine(studentId, editable) {
             ${editable && !day.visible_to_student ? `<div class="tag tag-hidden">Oculto para el alumno</div>` : ''}
             <h3>${day.day_label}</h3>
           </div>
-          ${editable ? `<div class="day-actions">
+          ${editable ? `<div class="day-move-controls">
             <button class="icon-btn" data-action="move-day-up" data-day="${day.id}" ${idx === 0 ? 'disabled' : ''} aria-label="Subir día">▲</button>
             <button class="icon-btn" data-action="move-day-down" data-day="${day.id}" ${idx === days.length - 1 ? 'disabled' : ''} aria-label="Bajar día">▼</button>
+          </div>
+          <div class="day-actions">
             <button class="icon-btn" data-action="toggle-visible" data-day="${day.id}">${day.visible_to_student ? '🚫 Ocultar' : '👁 Mostrar'}</button>
             <button class="icon-btn" data-action="duplicate-day" data-day="${day.id}">📋 Duplicar día</button>
             <button class="icon-btn" data-action="rename-day" data-day="${day.id}">Renombrar</button>
