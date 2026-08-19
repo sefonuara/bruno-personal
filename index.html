@@ -714,6 +714,24 @@
     width:100%;
     font-family:'Inter', sans-serif;
   }
+  .day-checkbox-group{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .day-checkbox-item{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    background:var(--bg);
+    border:1px solid var(--line);
+    border-radius:20px;
+    padding:6px 12px 6px 10px;
+    font-size:13px;
+    cursor:pointer;
+  }
+  .day-checkbox-item:has(input:checked){background:var(--accent-soft); border-color:var(--accent-line); color:var(--accent);}
+  .day-checkbox-item input{width:14px; height:14px; accent-color:var(--accent); flex-shrink:0;}
   .profile-save-btn{width:auto; padding:10px 24px; margin-top:6px;}
   .saved-msg{
     display:none;
@@ -812,6 +830,7 @@
     margin-bottom:10px;
     align-items:end;
   }
+  .progress-form-grid{grid-template-columns:1fr 1fr;}
   .payment-form-grid label, .progress-form-grid label{
     font-size:12px;
     color:var(--text-dim);
@@ -858,11 +877,13 @@
   .personal-info-panel{
     display:grid;
     grid-template-columns:repeat(auto-fit, minmax(150px, 1fr));
-    gap:14px;
+    gap:14px 20px;
     padding:16px 20px;
     background:var(--bg-card);
+    white-space:normal;
   }
-  .personal-info-item div:last-child{font-size:14px; font-weight:600; margin-top:2px;}
+  .personal-info-item{min-width:0;}
+  .personal-info-item div:last-child{font-size:14px; font-weight:600; margin-top:2px; overflow-wrap:break-word;}
 
   /* ---------- Modal ---------- */
   .modal-backdrop{
@@ -1310,8 +1331,8 @@ function renderExerciseItem(ex, editable, day, idx, total) {
             <div class="ex-reps">${ex.reps ?? '—'}</div>
           </div>
           <div class="ex-meta-block">
-            <div class="ex-meta-label">Peso <button class="progress-btn" data-action="open-progress" data-student="${day.student_id}" data-ex-name="${escapeAttr(ex.name)}" aria-label="Ver progreso">📈</button></div>
-            <input type="text" class="weight-input" data-ex="${ex.id}" data-day="${day.id}" value="${escapeAttr(ex.weight)}" placeholder="Ej: 10kg">
+            <div class="ex-meta-label">Peso máximo total (kg) <button class="progress-btn" data-action="open-progress" data-student="${day.student_id}" data-ex-name="${escapeAttr(ex.name)}" aria-label="Ver progreso">📈</button></div>
+            <input type="number" step="0.5" min="0" class="weight-input" data-ex="${ex.id}" data-day="${day.id}" data-ex-name="${escapeAttr(ex.name)}" data-student="${day.student_id}" data-original="${ex.weight_kg ?? ''}" value="${ex.weight_kg ?? ''}" placeholder="kg">
           </div>
         </div>
         <div class="ex-notes-block">
@@ -1372,6 +1393,7 @@ async function renderRoutine(studentId, editable) {
       </div>` : (student && student.routine_start_date ? `<div class="routine-start-display">Rutina vigente desde el ${formatDateEs(parseDateOnly(student.routine_start_date))}</div>` : '')}
       <div class="routine-alerts">
         ${editable && student && student.desired_routine_type ? `<div class="routine-type-request">💬 Pidió: <strong>${student.desired_routine_type}</strong></div>` : ''}
+        ${editable && student && student.training_days && student.training_days.length ? `<div class="routine-type-request">📅 Entrena: <strong>${student.training_days.join(', ')}</strong></div>` : ''}
         ${editable && student && student.injuries ? `<div class="injury-warning">⚠️ Lesiones: <strong>${student.injuries}</strong></div>` : ''}
       </div>
     </div>
@@ -1647,6 +1669,7 @@ function renderPersonalInfoPanel(s) {
     ['Peso', s.weight_kg ? `${s.weight_kg} kg` : '—'],
     ['Gimnasio', s.gym_name || '—'],
     ['Tipo de rutina pedido', s.desired_routine_type || '—'],
+    ['Días que entrena', s.training_days && s.training_days.length ? s.training_days.join(', ') : '—'],
     ['Lesiones', s.injuries || '—'],
   ];
   return `<div class="personal-info-panel">
@@ -1681,18 +1704,16 @@ async function openProgressModal(studentId, exerciseName) {
     <div class="modal-backdrop">
       <div class="modal modal-wide">
         <h3>Progreso — ${exerciseName}</h3>
-        <div class="sub" style="margin-bottom:16px;">Historial de peso a lo largo del tiempo, se guarda aparte de la rutina (no se pierde si cambiás los días).</div>
+        <div class="sub" style="margin-bottom:16px;">Historial de peso</div>
 
         ${logs.length >= 2 ? `<div class="progress-chart-wrap"><canvas id="progress-chart"></canvas></div>` : ''}
 
         <div class="field"><label>Nuevo registro</label></div>
         <div class="progress-form-grid">
           <label>Fecha</label>
-          <label>Peso (kg)</label>
-          <label>Reps <span class="optional-tag">(opcional)</span></label>
+          <label>Peso máximo total (kg)</label>
           <input type="date" id="pl-date" value="${new Date().toISOString().slice(0,10)}">
           <input type="number" id="pl-weight" min="0" step="0.5">
-          <input type="text" id="pl-reps" placeholder="Ej: 8-12">
         </div>
         <div class="field"><input type="text" id="pl-notes" placeholder="Nota (opcional)"></div>
         <button class="btn-primary" id="pl-save-btn" style="margin-bottom:16px;">Registrar</button>
@@ -1704,7 +1725,7 @@ async function openProgressModal(studentId, exerciseName) {
             <div class="payment-history-row">
               <div>
                 <strong>${formatDateEs(parseDateOnly(l.log_date))}</strong>
-                <span class="text-dim"> · ${l.weight_kg}kg${l.reps ? ' · ' + l.reps : ''}</span>
+                <span class="text-dim"> · ${l.weight_kg}kg</span>
                 ${l.notes ? `<div class="text-dim">${l.notes}</div>` : ''}
               </div>
               <button class="icon-btn danger" data-action="delete-weight-log" data-log="${l.id}">Borrar</button>
@@ -1727,7 +1748,7 @@ async function openProgressModal(studentId, exerciseName) {
       data: {
         labels: logs.map(l => formatDateEs(parseDateOnly(l.log_date))),
         datasets: [{
-          label: 'Peso (kg)',
+          label: 'Peso máximo total (kg)',
           data: logs.map(l => l.weight_kg),
           borderColor: '#FF4429',
           backgroundColor: 'rgba(255,68,41,0.15)',
@@ -1761,7 +1782,6 @@ async function openProgressModal(studentId, exerciseName) {
       exercise_name: exerciseName,
       log_date: document.getElementById('pl-date').value || new Date().toISOString().slice(0,10),
       weight_kg: parseFloat(weightVal),
-      reps: document.getElementById('pl-reps').value.trim() || null,
       notes: document.getElementById('pl-notes').value.trim() || null,
     };
     const { error: saveError } = await supabase.from('weight_logs').insert(payload);
@@ -2027,6 +2047,17 @@ async function renderProfileForm(studentId) {
         </datalist>
       </div>
       <div class="field">
+        <label>Días que vas a entrenar <span class="optional-tag">(opcional)</span></label>
+        <div class="day-checkbox-group">
+          ${['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'].map(d => `
+            <label class="day-checkbox-item">
+              <input type="checkbox" class="pf-training-day" value="${d}" ${(profile.training_days || []).includes(d) ? 'checked' : ''}>
+              <span>${d}</span>
+            </label>
+          `).join('')}
+        </div>
+      </div>
+      <div class="field">
         <label>Lesiones actuales o pasadas <span class="optional-tag">(opcional)</span></label>
         <textarea id="pf-injuries" rows="3" placeholder="Ej: dolor de rodilla derecha, hernia lumbar, cirugía de hombro en 2023...">${escapeAttr(profile.injuries)}</textarea>
       </div>
@@ -2050,6 +2081,7 @@ async function renderProfileForm(studentId) {
       gym_name: document.getElementById('pf-gym').value.trim() || null,
       desired_routine_type: document.getElementById('pf-routine-type').value.trim() || null,
       injuries: document.getElementById('pf-injuries').value.trim() || null,
+      training_days: [...document.querySelectorAll('.pf-training-day:checked')].map(cb => cb.value),
     };
 
     const { error: saveError } = await supabase.from('profiles').update(payload).eq('id', studentId);
@@ -2080,14 +2112,31 @@ async function saveNotes(input) {
 
 async function saveWeight(input) {
   const exId = input.dataset.ex;
-  const value = input.value.trim() || null;
+  const raw = input.value.trim();
+  const value = raw === '' ? null : parseFloat(raw);
+  const original = input.dataset.original === '' ? null : parseFloat(input.dataset.original);
   input.style.borderColor = '';
-  const { error } = await supabase.from('exercises').update({ weight: value }).eq('id', exId);
+
+  const { error } = await supabase.from('exercises').update({ weight_kg: value }).eq('id', exId);
   if (error) {
     input.style.borderColor = 'var(--accent-line)';
     input.title = 'No se pudo guardar: ' + error.message;
-  } else {
-    input.title = '';
+    return;
+  }
+  input.title = '';
+
+  // Si el valor realmente cambió y es un número válido, queda registrado solo en el historial de progreso.
+  if (value !== null && !isNaN(value) && value !== original) {
+    const { error: logError } = await supabase.from('weight_logs').insert({
+      student_id: input.dataset.student,
+      exercise_name: input.dataset.exName,
+      weight_kg: value,
+    });
+    if (!logError) {
+      input.dataset.original = String(value);
+    }
+  } else if (value === null) {
+    input.dataset.original = '';
   }
 }
 
@@ -2186,7 +2235,7 @@ async function copyDayToStudent(day, targetId) {
       name: ex.name,
       sets: ex.sets,
       reps: ex.reps,
-      weight: null,
+      weight_kg: null,
       notes: null,
       gif_url: ex.gif_url,
       groups_with_next: ex.groups_with_next,
