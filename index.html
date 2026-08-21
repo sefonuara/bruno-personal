@@ -2691,7 +2691,19 @@ themeSwitch.addEventListener('click', () => {
 });
 
 // ---------- Init ----------
-boot();
+const hashParams = new URLSearchParams(window.location.hash.slice(1));
+const searchParams = new URLSearchParams(window.location.search);
+const isPasswordRecovery = hashParams.get('type') === 'recovery' || searchParams.get('type') === 'recovery';
+
+if (isPasswordRecovery) {
+  loginTabsEl.classList.add('hidden');
+  loginFormEl.classList.add('hidden');
+  signupFormEl.classList.add('hidden');
+  forgotFormEl.classList.add('hidden');
+  resetFormEl.classList.remove('hidden');
+} else {
+  boot();
+}
 </script>
 </body>
 </html>
