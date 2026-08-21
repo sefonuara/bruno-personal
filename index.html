@@ -162,6 +162,16 @@
     margin-top:12px;
     display:none;
   }
+  .link-btn{
+    display:block;
+    width:100%;
+    background:transparent;
+    color:var(--text-dim);
+    font-size:13px;
+    text-align:center;
+    padding:10px 0 0;
+  }
+  .link-btn:hover{color:var(--accent);}
 
   /* ---------- App shell ---------- */
   #app-view{
@@ -1006,6 +1016,7 @@
       </div>
       <button type="submit" class="btn-primary" id="login-btn">Ingresar</button>
       <div class="error-msg" id="login-error"></div>
+      <button type="button" class="link-btn" id="forgot-password-link">¿Olvidaste tu contraseña?</button>
     </form>
 
     <form id="signup-form" class="hidden">
@@ -1034,6 +1045,38 @@
       </div>
       <button type="submit" class="btn-primary" id="signup-btn">Crear cuenta</button>
       <div class="error-msg" id="signup-error"></div>
+    </form>
+
+    <form id="forgot-password-form" class="hidden">
+      <div class="sub">Ingresá tu email y te mandamos un link para poner una contraseña nueva.</div>
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="forgot-email" required autocomplete="username">
+      </div>
+      <button type="submit" class="btn-primary" id="forgot-btn">Enviar link</button>
+      <div class="error-msg" id="forgot-error"></div>
+      <div class="saved-msg" id="forgot-success">Listo, revisá tu email (y la carpeta de spam) para el link.</div>
+      <button type="button" class="link-btn" id="back-to-login-link">Volver a iniciar sesión</button>
+    </form>
+
+    <form id="reset-password-form" class="hidden">
+      <div class="sub">Ingresá tu nueva contraseña.</div>
+      <div class="field">
+        <label>Contraseña nueva</label>
+        <div class="password-wrap">
+          <input type="password" id="reset-password" required minlength="6" autocomplete="new-password">
+          <button type="button" class="password-toggle" data-target="reset-password">Ver</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>Confirmar contraseña</label>
+        <div class="password-wrap">
+          <input type="password" id="reset-password-confirm" required minlength="6" autocomplete="new-password">
+          <button type="button" class="password-toggle" data-target="reset-password-confirm">Ver</button>
+        </div>
+      </div>
+      <button type="submit" class="btn-primary" id="reset-password-btn">Guardar contraseña</button>
+      <div class="error-msg" id="reset-password-error"></div>
     </form>
   </div>
 </div>
@@ -1143,6 +1186,9 @@ const tabLogin = document.getElementById('tab-login');
 const tabSignup = document.getElementById('tab-signup');
 const loginFormEl = document.getElementById('login-form');
 const signupFormEl = document.getElementById('signup-form');
+const forgotFormEl = document.getElementById('forgot-password-form');
+const resetFormEl = document.getElementById('reset-password-form');
+const loginTabsEl = document.querySelector('.login-box .tabs');
 
 document.querySelectorAll('.password-toggle').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -1164,6 +1210,90 @@ tabSignup.addEventListener('click', () => {
   tabLogin.classList.remove('active');
   signupFormEl.classList.remove('hidden');
   loginFormEl.classList.add('hidden');
+});
+
+document.getElementById('forgot-password-link').addEventListener('click', () => {
+  loginTabsEl.classList.add('hidden');
+  loginFormEl.classList.add('hidden');
+  signupFormEl.classList.add('hidden');
+  forgotFormEl.classList.remove('hidden');
+});
+
+document.getElementById('back-to-login-link').addEventListener('click', () => {
+  forgotFormEl.classList.add('hidden');
+  document.getElementById('forgot-success').style.display = 'none';
+  document.getElementById('forgot-error').style.display = 'none';
+  loginTabsEl.classList.remove('hidden');
+  loginFormEl.classList.remove('hidden');
+});
+
+forgotFormEl.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const errBox = document.getElementById('forgot-error');
+  const successBox = document.getElementById('forgot-success');
+  const btn = document.getElementById('forgot-btn');
+  errBox.style.display = 'none';
+  successBox.style.display = 'none';
+
+  const email = document.getElementById('forgot-email').value.trim();
+  btn.disabled = true;
+  btn.textContent = 'Enviando...';
+
+  const redirectTo = window.location.origin + window.location.pathname;
+  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+
+  btn.disabled = false;
+  btn.textContent = 'Enviar link';
+
+  if (error) {
+    errBox.textContent = 'No se pudo enviar: ' + error.message;
+    errBox.style.display = 'block';
+    return;
+  }
+  successBox.style.display = 'block';
+  forgotFormEl.reset();
+});
+
+resetFormEl.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const errBox = document.getElementById('reset-password-error');
+  const btn = document.getElementById('reset-password-btn');
+  errBox.style.display = 'none';
+
+  const password = document.getElementById('reset-password').value;
+  const confirm = document.getElementById('reset-password-confirm').value;
+  if (password !== confirm) {
+    errBox.textContent = 'Las contraseñas no coinciden.';
+    errBox.style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Guardando...';
+  const { error } = await supabase.auth.updateUser({ password });
+  btn.disabled = false;
+  btn.textContent = 'Guardar contraseña';
+
+  if (error) {
+    errBox.textContent = 'No se pudo guardar: ' + error.message;
+    errBox.style.display = 'block';
+    return;
+  }
+
+  resetFormEl.classList.add('hidden');
+  loginTabsEl.classList.remove('hidden');
+  await boot();
+});
+
+// Supabase avisa este evento cuando alguien llega desde el link de recuperación de contraseña.
+supabase.auth.onAuthStateChange((event) => {
+  if (event === 'PASSWORD_RECOVERY') {
+    loginTabsEl.classList.add('hidden');
+    loginFormEl.classList.add('hidden');
+    signupFormEl.classList.add('hidden');
+    forgotFormEl.classList.add('hidden');
+    resetFormEl.classList.remove('hidden');
+  }
 });
 
 signupFormEl.addEventListener('submit', async (e) => {
