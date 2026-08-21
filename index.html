@@ -293,6 +293,7 @@
     overflow-y:auto;
     max-width:900px;
   }
+  #main-content.admin-view{max-width:1400px;}
   #main-content h1{font-size:38px;}
   .subtitle{color:var(--text-dim); font-size:14px; margin-bottom:32px;}
   .routine-start-row{
@@ -857,14 +858,6 @@
     vertical-align:middle;
   }
   .progress-btn:hover{color:var(--accent);}
-  .progress-chart-wrap{
-    background:var(--bg-card);
-    border:1px solid var(--line);
-    border-radius:10px;
-    padding:16px;
-    margin-bottom:20px;
-    height:220px;
-  }
   .payment-history{
     max-height:220px;
     overflow-y:auto;
@@ -947,6 +940,7 @@
     }
   }
 
+  @page{margin:12mm;}
   @media print{
     body{background:#fff !important; color:#000 !important;}
     #sidebar, button, .add-exercise-row, .superset-link-btn, .duplicate-btn, .export-pdf-btn, .contact-trainer-btn, .routine-alerts{
@@ -985,7 +979,6 @@
     .superset-badge{color:#000 !important;}
   }
 </style>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 </head>
 <body>
 
@@ -1338,8 +1331,8 @@ function renderExerciseItem(ex, editable, day, idx, total) {
             <div class="ex-reps">${ex.reps ?? '—'}</div>
           </div>
           <div class="ex-meta-block">
-            <div class="ex-meta-label">Peso máximo total (kg) <button class="progress-btn" data-action="open-progress" data-student="${day.student_id}" data-ex-name="${escapeAttr(ex.name)}" aria-label="Ver progreso">📈</button></div>
-            <input type="number" step="0.5" min="0" class="weight-input" data-ex="${ex.id}" data-day="${day.id}" data-ex-name="${escapeAttr(ex.name)}" data-student="${day.student_id}" data-original="${ex.weight_kg ?? ''}" value="${ex.weight_kg ?? ''}" placeholder="kg">
+            <div class="ex-meta-label">Peso (kg) <button class="progress-btn" data-action="open-progress" data-student="${day.student_id}" data-ex-name="${escapeAttr(ex.name)}" aria-label="Ver historial">📈</button></div>
+            <input type="text" class="weight-input" data-ex="${ex.id}" data-day="${day.id}" data-ex-name="${escapeAttr(ex.name)}" data-student="${day.student_id}" data-original="${escapeAttr(ex.weight)}" value="${escapeAttr(ex.weight)}" placeholder="Ej: 50kg -> 60kg">
           </div>
         </div>
         <div class="ex-notes-block">
@@ -1380,6 +1373,7 @@ function renderExerciseList(exercises, editable, day) {
 }
 
 async function renderRoutine(studentId, editable) {
+  mainContent.classList.remove('admin-view');
   mainContent.innerHTML = `<div class="empty-state">Cargando...</div>`;
 
   const { data: days } = await supabase
@@ -1547,6 +1541,17 @@ function parseDateOnly(dateStr) {
   return new Date(y, m - 1, d);
 }
 
+function todayLocalISO() {
+  // toISOString() converts to UTC first, which shows "tomorrow" in the
+  // evening for timezones behind UTC (e.g. Argentina). Build the string
+  // from local date parts instead.
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 function computePaymentStatus(profile, payments) {
   const totalMonths = (payments || []).reduce((sum, p) => sum + Number(p.period_months || 1), 0);
   const start = new Date(profile.created_at);
@@ -1574,6 +1579,7 @@ async function showAdminPanel() {
   adminPanelBtn.classList.add('active');
   renderStudentList();
 
+  mainContent.classList.add('admin-view');
   mainContent.innerHTML = `<div class="empty-state">Cargando...</div>`;
 
   const { data: all, error } = await supabase
@@ -1621,7 +1627,7 @@ async function showAdminPanel() {
   } else {
     html += `<div class="admin-table-wrap"><table class="admin-table">
       <thead><tr>
-        <th></th><th>Alumno</th><th>Activo</th><th>Pago</th><th></th><th>Teléfono</th><th>Notas privadas</th>
+        <th></th><th>Alumno</th><th>Activo</th><th>Pago</th><th></th><th>Teléfono</th><th>Notas privadas</th><th></th>
       </tr></thead>
       <tbody>
         ${all.map(s => `
@@ -1633,9 +1639,10 @@ async function showAdminPanel() {
             <td><button class="icon-btn" data-action="manage-payments" data-id="${s.id}" data-name="${escapeAttr(s.full_name)}">Gestionar pagos</button></td>
             <td><input type="text" class="admin-input" data-field="phone" data-id="${s.id}" value="${escapeAttr(s.phone)}" placeholder="Opcional"></td>
             <td><input type="text" class="admin-input" data-field="admin_notes" data-id="${s.id}" value="${escapeAttr(s.admin_notes)}" placeholder="Solo vos la ves"></td>
+            <td><button class="icon-btn danger" data-action="delete-student" data-id="${s.id}" data-name="${escapeAttr(s.full_name)}">🗑 Eliminar</button></td>
           </tr>
           <tr class="personal-info-row hidden" data-for="${s.id}">
-            <td colspan="7">${renderPersonalInfoPanel(s)}</td>
+            <td colspan="8">${renderPersonalInfoPanel(s)}</td>
           </tr>
         `).join('')}
       </tbody>
@@ -1653,6 +1660,9 @@ async function showAdminPanel() {
   });
   mainContent.querySelectorAll('[data-action="manage-payments"]').forEach(btn => {
     btn.addEventListener('click', () => openPaymentsModal(btn.dataset.id, btn.dataset.name));
+  });
+  mainContent.querySelectorAll('[data-action="delete-student"]').forEach(btn => {
+    btn.addEventListener('click', () => openDeleteStudentModal(btn.dataset.id, btn.dataset.name));
   });
   mainContent.querySelectorAll('[data-action="toggle-personal-info"]').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -1692,7 +1702,6 @@ function renderPersonalInfoPanel(s) {
 }
 
 // ---------- Exercise weight progress ----------
-let progressChartInstance = null;
 
 async function openProgressModal(studentId, exerciseName) {
   modalRoot.innerHTML = `<div class="modal-backdrop"><div class="modal modal-wide"><div class="empty-state">Cargando...</div></div></div>`;
@@ -1715,14 +1724,12 @@ async function openProgressModal(studentId, exerciseName) {
         <h3>Progreso — ${exerciseName}</h3>
         <div class="sub" style="margin-bottom:16px;">Historial de peso</div>
 
-        ${logs.length >= 2 ? `<div class="progress-chart-wrap"><canvas id="progress-chart"></canvas></div>` : ''}
-
         <div class="field"><label>Nuevo registro</label></div>
         <div class="progress-form-grid">
           <label>Fecha</label>
-          <label>Peso máximo total (kg)</label>
-          <input type="date" id="pl-date" value="${new Date().toISOString().slice(0,10)}">
-          <input type="number" id="pl-weight" min="0" step="0.5">
+          <label>Peso (kg)</label>
+          <input type="date" id="pl-date" value="${todayLocalISO()}">
+          <input type="text" id="pl-weight" placeholder="Ej: 50kg -> 60kg">
         </div>
         <div class="field"><input type="text" id="pl-notes" placeholder="Nota (opcional)"></div>
         <button class="btn-primary" id="pl-save-btn" style="margin-bottom:16px;">Registrar</button>
@@ -1734,7 +1741,7 @@ async function openProgressModal(studentId, exerciseName) {
             <div class="payment-history-row">
               <div>
                 <strong>${formatDateEs(parseDateOnly(l.log_date))}</strong>
-                <span class="text-dim"> · ${l.weight_kg}kg</span>
+                <span class="text-dim"> · ${l.weight_text || (l.weight_kg != null ? l.weight_kg + 'kg' : '')}</span>
                 ${l.notes ? `<div class="text-dim">${l.notes}</div>` : ''}
               </div>
               <button class="icon-btn danger" data-action="delete-weight-log" data-log="${l.id}">Borrar</button>
@@ -1750,37 +1757,10 @@ async function openProgressModal(studentId, exerciseName) {
 
   document.getElementById('modal-cancel').addEventListener('click', closeModal);
 
-  if (logs.length >= 2 && window.Chart) {
-    const ctx = document.getElementById('progress-chart');
-    progressChartInstance = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: logs.map(l => formatDateEs(parseDateOnly(l.log_date))),
-        datasets: [{
-          label: 'Peso máximo total (kg)',
-          data: logs.map(l => l.weight_kg),
-          borderColor: '#FF4429',
-          backgroundColor: 'rgba(255,68,41,0.15)',
-          tension: 0.25,
-          fill: true,
-          pointRadius: 4,
-        }],
-      },
-      options: {
-        responsive: true,
-        plugins: { legend: { display: false } },
-        scales: {
-          y: { beginAtZero: false, ticks: { color: '#9497A0' }, grid: { color: 'rgba(255,255,255,0.06)' } },
-          x: { ticks: { color: '#9497A0' }, grid: { display: false } },
-        },
-      },
-    });
-  }
-
   document.getElementById('pl-save-btn').addEventListener('click', async () => {
     const errBox = document.getElementById('pl-error');
     errBox.style.display = 'none';
-    const weightVal = document.getElementById('pl-weight').value;
+    const weightVal = document.getElementById('pl-weight').value.trim();
     if (!weightVal) {
       errBox.textContent = 'Ingresá el peso.';
       errBox.style.display = 'block';
@@ -1789,8 +1769,8 @@ async function openProgressModal(studentId, exerciseName) {
     const payload = {
       student_id: studentId,
       exercise_name: exerciseName,
-      log_date: document.getElementById('pl-date').value || new Date().toISOString().slice(0,10),
-      weight_kg: parseFloat(weightVal),
+      log_date: document.getElementById('pl-date').value || todayLocalISO(),
+      weight_text: weightVal,
       notes: document.getElementById('pl-notes').value.trim() || null,
     };
     const { error: saveError } = await supabase.from('weight_logs').insert(payload);
@@ -1808,6 +1788,82 @@ async function openProgressModal(studentId, exerciseName) {
       await supabase.from('weight_logs').delete().eq('id', btn.dataset.log);
       openProgressModal(studentId, exerciseName);
     });
+  });
+}
+
+// ---------- Delete student ----------
+function openDeleteStudentModal(studentId, studentName) {
+  modalRoot.innerHTML = `
+    <div class="modal-backdrop">
+      <div class="modal">
+        <h3>Eliminar a ${studentName}</h3>
+        <div class="sub" style="margin-bottom:16px;">
+          Esto borra <strong>para siempre</strong> su perfil, rutinas, historial de peso y pagos. No se puede deshacer.
+          Para confirmar, ingresá <strong>tu propia contraseña</strong> (la del profe).
+        </div>
+        <div class="field">
+          <label>Tu contraseña</label>
+          <div class="password-wrap">
+            <input type="password" id="del-password" autocomplete="current-password">
+            <button type="button" class="password-toggle" data-target="del-password">Ver</button>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-secondary" id="modal-cancel">Cancelar</button>
+          <button class="btn-primary" id="del-confirm-btn" style="background:var(--accent);">Eliminar definitivamente</button>
+        </div>
+        <div class="error-msg" id="del-error"></div>
+      </div>
+    </div>`;
+
+  document.getElementById('modal-cancel').addEventListener('click', closeModal);
+  document.querySelector('.password-toggle[data-target="del-password"]').addEventListener('click', function() {
+    const input = document.getElementById('del-password');
+    const showing = input.type === 'text';
+    input.type = showing ? 'password' : 'text';
+    this.textContent = showing ? 'Ver' : 'Ocultar';
+  });
+
+  document.getElementById('del-confirm-btn').addEventListener('click', async () => {
+    const errBox = document.getElementById('del-error');
+    const confirmBtn = document.getElementById('del-confirm-btn');
+    const password = document.getElementById('del-password').value;
+    errBox.style.display = 'none';
+
+    if (!password) {
+      errBox.textContent = 'Ingresá tu contraseña.';
+      errBox.style.display = 'block';
+      return;
+    }
+
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = 'Verificando...';
+
+    const { data: { user } } = await supabase.auth.getUser();
+    const { error: authError } = await supabase.auth.signInWithPassword({ email: user.email, password });
+
+    if (authError) {
+      errBox.textContent = 'Contraseña incorrecta.';
+      errBox.style.display = 'block';
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = 'Eliminar definitivamente';
+      return;
+    }
+
+    confirmBtn.textContent = 'Eliminando...';
+    const { error: deleteError } = await supabase.from('profiles').delete().eq('id', studentId);
+    if (deleteError) {
+      errBox.textContent = 'No se pudo eliminar: ' + deleteError.message;
+      errBox.style.display = 'block';
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = 'Eliminar definitivamente';
+      return;
+    }
+
+    closeModal();
+    if (selectedStudentId === studentId) selectedStudentId = null;
+    await loadStudents();
+    showAdminPanel();
   });
 }
 
@@ -1834,7 +1890,7 @@ async function openPaymentsModal(studentId, studentName) {
           <label>Fecha del pago</label>
           <label>Meses que cubre</label>
           <label>Monto <span class="optional-tag">(opcional)</span></label>
-          <input type="date" id="pay-date" value="${new Date().toISOString().slice(0,10)}">
+          <input type="date" id="pay-date" value="${todayLocalISO()}">
           <input type="number" id="pay-months" min="1" step="1" value="1">
           <input type="number" id="pay-amount" min="0" step="0.01" placeholder="Opcional">
         </div>
@@ -1869,7 +1925,7 @@ async function openPaymentsModal(studentId, studentName) {
     errBox.style.display = 'none';
     const payload = {
       student_id: studentId,
-      payment_date: document.getElementById('pay-date').value || new Date().toISOString().slice(0,10),
+      payment_date: document.getElementById('pay-date').value || todayLocalISO(),
       period_months: parseInt(document.getElementById('pay-months').value) || 1,
       amount: document.getElementById('pay-amount').value ? parseFloat(document.getElementById('pay-amount').value) : null,
       notes: document.getElementById('pay-notes').value.trim() || null,
@@ -1989,6 +2045,7 @@ function openGifPicker(onSelect) {
 
 // ---------- Student profile ----------
 async function renderProfileForm(studentId) {
+  mainContent.classList.remove('admin-view');
   mainContent.innerHTML = `<div class="empty-state">Cargando...</div>`;
 
   const { data: profile, error } = await supabase
@@ -2121,12 +2178,11 @@ async function saveNotes(input) {
 
 async function saveWeight(input) {
   const exId = input.dataset.ex;
-  const raw = input.value.trim();
-  const value = raw === '' ? null : parseFloat(raw);
-  const original = input.dataset.original === '' ? null : parseFloat(input.dataset.original);
+  const value = input.value.trim() || null;
+  const original = input.dataset.original || '';
   input.style.borderColor = '';
 
-  const { error } = await supabase.from('exercises').update({ weight_kg: value }).eq('id', exId);
+  const { error } = await supabase.from('exercises').update({ weight: value }).eq('id', exId);
   if (error) {
     input.style.borderColor = 'var(--accent-line)';
     input.title = 'No se pudo guardar: ' + error.message;
@@ -2134,24 +2190,40 @@ async function saveWeight(input) {
   }
   input.title = '';
 
-  // Si el valor realmente cambió y es un número válido, queda registrado solo en el historial de progreso.
-  if (value !== null && !isNaN(value) && value !== original) {
+  // Si el valor realmente cambió, queda registrado solo en el historial de progreso.
+  if (value !== null && value !== original) {
     const { error: logError } = await supabase.from('weight_logs').insert({
       student_id: input.dataset.student,
       exercise_name: input.dataset.exName,
-      weight_kg: value,
+      weight_text: value,
+      log_date: todayLocalISO(),
     });
     if (!logError) {
-      input.dataset.original = String(value);
+      input.dataset.original = value;
     }
   } else if (value === null) {
     input.dataset.original = '';
   }
 }
 
-function exportRoutinePDF(student) {
+async function exportRoutinePDF(student) {
   const name = student ? student.full_name : 'Rutina';
   const prevTitle = document.title;
+
+  // Las miniaturas usan carga perezosa para no pesar en el uso normal.
+  // Antes de imprimir, forzamos que las que falten se terminen de cargar,
+  // así el PDF nunca sale con espacios en blanco donde debería ir el gif.
+  const images = [...mainContent.querySelectorAll('.ex-thumb-lg')];
+  await Promise.all(images.map(img => {
+    if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+    img.loading = 'eager';
+    return new Promise(resolve => {
+      img.addEventListener('load', resolve, { once: true });
+      img.addEventListener('error', resolve, { once: true });
+      setTimeout(resolve, 4000); // por si alguna imagen nunca carga, no bloqueamos la impresión
+    });
+  }));
+
   document.title = `Rutina - ${name}`;
   window.addEventListener('afterprint', () => { document.title = prevTitle; }, { once: true });
   window.print();
@@ -2244,7 +2316,7 @@ async function copyDayToStudent(day, targetId) {
       name: ex.name,
       sets: ex.sets,
       reps: ex.reps,
-      weight_kg: null,
+      weight: null,
       notes: null,
       gif_url: ex.gif_url,
       groups_with_next: ex.groups_with_next,
